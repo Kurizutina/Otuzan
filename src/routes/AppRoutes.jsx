@@ -1,0 +1,57 @@
+import React from 'react';
+
+import {
+  BrowserRouter,
+  Routes,
+  Route
+} from 'react-router-dom';
+
+import Login from '../Pages/auth/Login';
+import Register from '../Pages/auth/Register';
+import Home from '../Pages/costumer/Home';
+import JollibeeMenu from '../Pages/costumer/JollibeeMenu';
+import McDonaldsMenu from '../Pages/costumer/McDonaldsMenu';
+
+const AppRoutes = () => {
+  return (
+    <BrowserRouter>
+
+      <Routes>
+
+        <Route
+          path="/"
+          element={<Login />}
+        />
+
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route
+          path="/register"
+          element={<Register />}
+        />
+
+        <Route 
+          path="/home" 
+          element={<Home />} 
+        />
+
+        <Route
+          path="/food/jollibee"
+          element={<JollibeeMenu />}
+        />
+
+        <Route
+          path="/food/mcdonalds"
+          element={<McDonaldsMenu />}
+        />
+
+      </Routes>
+
+    </BrowserRouter>
+  );
+};
+
+export default AppRoutes;

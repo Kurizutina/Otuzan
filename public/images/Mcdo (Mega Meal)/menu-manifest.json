@@ -1,0 +1,1130 @@
+[
+  {
+    "category": "Burgers",
+    "name": "Big Mac Meal",
+    "price": 284,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Big Mac Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Burger McDo Meal",
+    "price": 157,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Burger McDo Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Burger McDo with Lettuce & Tomatoes Meal",
+    "price": 192,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Burger McDo with Lettuce & Tomatoes Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Cheesburger with regular fries",
+    "price": 121,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Cheesburger with regular fries.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Cheeseburger Meal",
+    "price": 156,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Cheeseburger Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Cheeseburger with Lettuce & Tomatoes",
+    "price": 191,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Cheeseburger with Lettuce & Tomatoes.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Cheesy Burger McDo Meal",
+    "price": 167,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Cheesy Burger McDo Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Crispy Chicken Fillet Sandwich with Fries Meal",
+    "price": 177,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Crispy Chicken Fillet Sandwich with Fries Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Crispy Chicken Sandwich with Lettuce & Tomatoes Meal",
+    "price": 212,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Crispy Chicken Sandwich with Lettuce & Tomatoes Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Double Big Mac Meal",
+    "price": 346,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Double Big Mac Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Double Cheeseburger Meal",
+    "price": 250,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Double Cheeseburger Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Double Cheeseburger with Lettuce & Tomatoes Meal",
+    "price": 285,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Double Cheeseburger with Lettuce & Tomatoes Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Double McChicken Meal",
+    "price": 264,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Double McChicken Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Double Quarter Pounder with Cheese Meal",
+    "price": 346,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Double Quarter Pounder with Cheese Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "McChicken Meal",
+    "price": 234,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/McChicken Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Quarter Pounder with Cheese Meal",
+    "price": 284,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Quarter Pounder with Cheese Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Quarter Pounder with Cheese, Lettuce, & Tomatoes Meal",
+    "price": 319,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Quarter Pounder with Cheese, Lettuce, & Tomatoes Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "The BCB Meal",
+    "price": 277,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/The BCB Meal.webp"
+  },
+  {
+    "category": "Burgers",
+    "name": "Triple Cheeseburger Meal",
+    "price": 290,
+    "image": "/images/Mcdo (Mega Meal)/Burgers/Triple Cheeseburger Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "1 pc. Chicken McDo Fries Meal",
+    "price": 198,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/1-pc.-Chicken-McDo-Fries-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "1 pc. Chicken McDo w McSpaghetti Fries Meal",
+    "price": 262,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/1-pc.-Chicken-McDo-w-McSpaghetti-Fries-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "1 pc. Chicken McDo w Rice Coke McFloat Meal",
+    "price": 140,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/1-pc.-Chicken-McDo-w-Rice-Coke-McFloat-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "1 pc. Spicy Chicken McDo Fries Meal",
+    "price": 203,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/1-pc.-Spicy-Chicken-McDo-Fries-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "1 pc. Spicy Chicken McDo Meal",
+    "price": 120,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/1-pc.-Spicy-Chicken-McDo-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "1 pc. Spicy Chicken McDo w McSpaghetti Fries Meal",
+    "price": 267,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/1-pc.-Spicy-Chicken-McDo-w-McSpaghetti-Fries-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "10 pc chicken mcnuggets",
+    "price": 189,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/10-pc-chicken-mcnuggets.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "2 pc spicy chicken mcdo and fries meal",
+    "price": 298,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/2-pc-spicy-chicken-mcdo-and-fries-meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "2 pc. Chicken McDo Fries Meal",
+    "price": 288,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/2-pc.-Chicken-McDo-Fries-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "2 pc. Chicken McDo Meal",
+    "price": 231,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/2-pc.-Chicken-McDo-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "2 pc. Spicy Chicken McDo Meal",
+    "price": 241,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/2-pc.-Spicy-Chicken-McDo-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "6 pc chicken mcnuggets withith rice meal",
+    "price": 188,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/6-pc-chicken-mcnuggets-withith-rice-meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "6 pc chicken mcnuggets",
+    "price": 110,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/6-pc-chicken-mcnuggets.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "6 pc. Chicken McNuggets w Fries Meal",
+    "price": 215,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/6-pc.-Chicken-McNuggets-w-Fries-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "8 pc chicken mcshare box 3",
+    "price": 670,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/8-pc-chicken-mcshare-box-3.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "Crispy Chicken Fillet Ala King w Fries Meal",
+    "price": 170,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/Crispy-Chicken-Fillet-Ala-King-w-Fries-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "Crispy Chicken Fillet w Fries Meal",
+    "price": 165,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/Crispy-Chicken-Fillet-w-Fries-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "Golden Chicken Curry Fillet with Fries Medium Meal",
+    "price": 181,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/Golden-Chicken-Curry-Fillet-with-Fries-Medium-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "Golden Chicken Curry Fillet with Medium Drink",
+    "price": 119,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/Golden-Chicken-Curry-Fillet-with-Medium-Drink.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "Mega Meal Chicken McDo w Fries Burger McDo",
+    "price": 226,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/Mega-Meal-Chicken-McDo-w-Fries-Burger-McDo.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "Mega Meal Chicken McDo w Rice McSpaghetti 1",
+    "price": 215,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/Mega-Meal-Chicken-McDo-w-Rice-McSpaghetti-1.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "Mega Meal Spicy Chicken McDo w Fries Burger McDo",
+    "price": 232,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/Mega-Meal-Spicy-Chicken-McDo-w-Fries-Burger-McDo.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "Mega Meal Spicy Chicken McDo w Fries McFlurry",
+    "price": 234,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/Mega-Meal-Spicy-Chicken-McDo-w-Fries-McFlurry.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "Mega Meal Spicy Chicken McDo w Rice McSpaghetti",
+    "price": 221,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/Mega-Meal-Spicy-Chicken-McDo-w-Rice-McSpaghetti.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "Sulit Busog 1 pc. Chicken Mcdo Meal",
+    "price": 103,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/Sulit-Busog-1-pc.-Chicken-Mcdo-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "Sulit Busog 1 pc. Chicken McDo with Extra Rice and Drink Meal",
+    "price": 128,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/Sulit-Busog-1-pc.-Chicken-McDo-with-Extra-Rice-and-Drink-Meal.webp"
+  },
+  {
+    "category": "Chicken Only Meals",
+    "name": "Sulit Busog Crispy Chicken Fillet Ala King w Extra Rice",
+    "price": 103,
+    "image": "/images/Mcdo (Mega Meal)/Chicken Only Meals/Sulit-Busog-Crispy-Chicken-Fillet-Ala-King-w-Extra-Rice.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "apple pie mcdo philippines",
+    "price": 45,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/apple-pie-mcdo-philippines.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "cotton candy mcfloat medium fries combo",
+    "price": 103,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/cotton-candy-mcfloat-medium-fries-combo.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "cotton candy mcfloat",
+    "price": 61,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/cotton-candy-mcfloat.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "Matcha McFlurry with Oreo Solo",
+    "price": 83,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/drinks-mcdo-image-02-philippines.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "McFlurry with Oreo",
+    "price": 70,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/drinks-mcdo-image-03-philippines.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "Hot Caramel Sundae",
+    "price": 59,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/drinks-mcdo-image-04-philippines.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "Raspberry McFloat",
+    "price": 61,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/drinks-mcdo-image-05-philippines.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "Hot Fudge Sundae",
+    "price": 59,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/drinks-mcdo-image-06-philippines.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "Orange Juice",
+    "price": 85,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/drinks-mcdo-image-07-philippines.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "Coke McFloat",
+    "price": 82,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/drinks-mcdo-image-08-philippines.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "Apple Juice",
+    "price": 85,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/drinks-mcdo-image-09-philippines.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "Coke Zero Sugar",
+    "price": 77,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/drinks-mcdo-image-10-philippines.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "Iced Tea",
+    "price": 85,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/drinks-mcdo-image-11-philippines.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "Sprite",
+    "price": 77,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/drinks-mcdo-image-12-philippines.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "Royal",
+    "price": 77,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/drinks-mcdo-image-13-philippines.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "grape mcfloat and medium fries combo",
+    "price": 103,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/grape-mcfloat-and-medium-fries-combo.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "grape mcfloat",
+    "price": 61,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/grape-mcfloat.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "McDo Golden McFloat Medium",
+    "price": 63,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/McDo-Golden-McFloat-Medium.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "rasberry mcfloat and medium fries combo",
+    "price": 103,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/rasberry-mcfloat-and-medium-fries-combo.webp"
+  },
+  {
+    "category": "Desserts",
+    "name": "royal mcfloat",
+    "price": 60,
+    "image": "/images/Mcdo (Mega Meal)/Desserts/royal-mcfloat.webp"
+  },
+  {
+    "category": "Group Meals",
+    "name": "10 pc. Chicken McNuggets",
+    "price": 189,
+    "image": "/images/Mcdo (Mega Meal)/Group Meals/10-pc. Chicken McNuggets.webp"
+  },
+  {
+    "category": "Group Meals",
+    "name": "20 pc. Chicken McNuggets",
+    "price": 375,
+    "image": "/images/Mcdo (Mega Meal)/Group Meals/20-pc. Chicken McNuggets.webp"
+  },
+  {
+    "category": "Group Meals",
+    "name": "6 pc. Chicken McShare Box",
+    "price": 513,
+    "image": "/images/Mcdo (Mega Meal)/Group Meals/6-pc. Chicken McShare Box.webp"
+  },
+  {
+    "category": "Group Meals",
+    "name": "8 pc. Chicken McShare Box",
+    "price": 670,
+    "image": "/images/Mcdo (Mega Meal)/Group Meals/8-pc.  Chicken McShare Box.webp"
+  },
+  {
+    "category": "Group Meals",
+    "name": "BFF Fries N McFloat Combo",
+    "price": 285,
+    "image": "/images/Mcdo (Mega Meal)/Group Meals/BFF Fries N McFloat Combo.webp"
+  },
+  {
+    "category": "Group Meals",
+    "name": "BFF Shake Shake Fries BBQ N McFloat Combo",
+    "price": 284,
+    "image": "/images/Mcdo (Mega Meal)/Group Meals/BFF Shake Shake Fries BBQ N McFloat Combo.webp"
+  },
+  {
+    "category": "Group Meals",
+    "name": "BFF Shake Shake Fries Cheese N McFloat Combo",
+    "price": 284,
+    "image": "/images/Mcdo (Mega Meal)/Group Meals/BFF Shake Shake Fries Cheese N McFloat Combo.webp"
+  },
+  {
+    "category": "Group Meals",
+    "name": "McShare Bundle for 3",
+    "price": 612,
+    "image": "/images/Mcdo (Mega Meal)/Group Meals/McShare Bundle for 3.webp"
+  },
+  {
+    "category": "Group Meals",
+    "name": "McShare Bundle for 4",
+    "price": 847,
+    "image": "/images/Mcdo (Mega Meal)/Group Meals/McShare Bundle for 4.webp"
+  },
+  {
+    "category": "Group Meals",
+    "name": "McSpaghetti Platter",
+    "price": 262,
+    "image": "/images/Mcdo (Mega Meal)/Group Meals/McSpaghetti Platter.webp"
+  },
+  {
+    "category": "Group Meals",
+    "name": "Snack Burger McShare",
+    "price": 380,
+    "image": "/images/Mcdo (Mega Meal)/Group Meals/Snack Burger McShare.webp"
+  },
+  {
+    "category": "Happy Meal",
+    "name": "1 pc. Chicken McDo Happy Meal",
+    "price": 200,
+    "image": "/images/Mcdo (Mega Meal)/Happy Meal/1-pc. Chicken McDo Happy Meal.webp"
+  },
+  {
+    "category": "Happy Meal",
+    "name": "4 pc. Chicken McNuggets Happy Meal",
+    "price": 184,
+    "image": "/images/Mcdo (Mega Meal)/Happy Meal/4-pc. Chicken McNuggets Happy Meal.webp"
+  },
+  {
+    "category": "Happy Meal",
+    "name": "Burger McDo Happy Meal",
+    "price": 148,
+    "image": "/images/Mcdo (Mega Meal)/Happy Meal/Burger McDo Happy Meal.webp"
+  },
+  {
+    "category": "Happy Meal",
+    "name": "McSpaghetti Happy Meal",
+    "price": 168,
+    "image": "/images/Mcdo (Mega Meal)/Happy Meal/McSpaghetti Happy Meal.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Americano",
+    "price": 135,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Americano.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Americano1",
+    "price": 135,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Americano1.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Blueberry Cheesecake",
+    "price": 180,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Blueberry Cheesecake.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Cafe Latte",
+    "price": 145,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Cafe Latte.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Café Latte",
+    "price": 145,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Café Latte.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Cappuccino",
+    "price": 145,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Cappuccino.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Caramel Cinnamon",
+    "price": 114,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Caramel Cinnamon.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Cheese and Bacon Croissant",
+    "price": 139,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Cheese and Bacon Croissant.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Chicken Pesto Wrap",
+    "price": 179,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Chicken Pesto Wrap.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Choco Chip Banana Slice",
+    "price": 89,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Choco Chip Banana Slice.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Choco Chip Cookies",
+    "price": 84,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Choco Chip Cookies.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Dark Chocolate Cake",
+    "price": 160,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Dark Chocolate Cake.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Espresso",
+    "price": 95,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Espresso.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Flat White",
+    "price": 145,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Flat White.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Iced Americano",
+    "price": 124,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Iced Americano.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Iced Latte",
+    "price": 99,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Iced Latte.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Iced Mocha",
+    "price": 149,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Iced Mocha.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Macchiato",
+    "price": 95,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Macchiato.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Americano Medium",
+    "price": 110,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Americano Medium.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Black Tea",
+    "price": 99,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Black Tea.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Cappuccino Medium",
+    "price": 139,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Cappuccino Medium.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Caramel Frappe",
+    "price": 169,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Caramel Frappe.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Caramel Oreo Frappe",
+    "price": 179,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Caramel Oreo Frappe.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Cereal Milk Iced Coffee",
+    "price": 83,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Cereal Milk Iced Coffee.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Cereal Milk Iced Latte",
+    "price": 160,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Cereal Milk Iced Latte.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Cereal Milk Premium Roast Coffee",
+    "price": 73,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Cereal Milk Premium Roast Coffee.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Coffee Float",
+    "price": 82,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Coffee Float.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Dalandan Smoothie",
+    "price": 159,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Dalandan Smoothie.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Double Choco Frappe",
+    "price": 169,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Double Choco Frappe.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Hot Latte Medium",
+    "price": 99,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Hot Latte Medium.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Iced Americano Medium",
+    "price": 99,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Iced Americano Medium.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Iced Americano",
+    "price": 140,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Iced Americano.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Iced c",
+    "price": 155,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Iced c.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Iced Chocolate",
+    "price": 149,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Iced Chocolate.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Iced Coffee Black Medium",
+    "price": 59,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Iced Coffee Black Medium.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Iced Coffee Chocolate",
+    "price": 79,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Iced Coffee Chocolate.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Iced Coffee Original",
+    "price": 63,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Iced Coffee Original.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Iced Coffee Vanilla",
+    "price": 99,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Iced Coffee Vanilla.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Iced Latte Medium",
+    "price": 99,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Iced Latte Medium.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Iced Latte",
+    "price": 150,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Iced Latte.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Iced Mocha Medium",
+    "price": 99,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Iced Mocha Medium.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Iced Tea",
+    "price": 129,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Iced Tea.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Jasmine Tea",
+    "price": 99,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Jasmine Tea.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Mocha Frappe",
+    "price": 169,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Mocha Frappe.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Mocha Oreo Frappe",
+    "price": 179,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Mocha Oreo Frappe.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Mochaccino Medium",
+    "price": 99,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Mochaccino Medium.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Peppermint Tea",
+    "price": 99,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Peppermint Tea.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Premium Roast Coffee",
+    "price": 63,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Premium Roast Coffee.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Strawberry Oreo Frappe",
+    "price": 169,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Strawberry Oreo Frappe.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "McCafé Strawberry Smoothie",
+    "price": 159,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/McCafé Strawberry Smoothie.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Mochaccino",
+    "price": 150,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Mochaccino.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Mochaccino1",
+    "price": 150,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Mochaccino1.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Oreo Cheesecake",
+    "price": 180,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Oreo Cheesecake.webp"
+  },
+  {
+    "category": "McCaffe Coffees",
+    "name": "Sausage Croissant",
+    "price": 139,
+    "image": "/images/Mcdo (Mega Meal)/McCaffe Coffees/Sausage Croissant.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "BFF Fries",
+    "price": 175,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/BFF Fries.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "BFF Shake Shake Fries BBQ N McFloat Combo",
+    "price": 284,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/BFF Shake Shake Fries BBQ N McFloat Combo.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Cotton Candy McFloat & Medium Fries Combo",
+    "price": 103,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Cotton Candy McFloat & Medium Fries Combo.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Fries",
+    "price": 92,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Fries.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Grape McFloat & Medium Fries Combo",
+    "price": 103,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Grape McFloat & Medium Fries Combo.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Large Fries N McFloat Combo",
+    "price": 138,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Large Fries N McFloat Combo.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Large Shake Shake Fries BBQ N McFloat Combo",
+    "price": 148,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Large Shake Shake Fries BBQ N McFloat Combo.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Large Shake Shake Fries Cheese N McFloat Combo",
+    "price": 148,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Large Shake Shake Fries Cheese N McFloat Combo.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Rasberry McFloat & Medium Fries Combo",
+    "price": 103,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Rasberry McFloat & Medium Fries Combo.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Shake Shake Fries BBQ N McFloat Combo",
+    "price": 126,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Shake Shake Fries BBQ N McFloat Combo.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Shake Shake Fries BBQ",
+    "price": 101,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Shake Shake Fries BBQ.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Shake Shake Fries Cheese N McFloat Combo",
+    "price": 126,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Shake Shake Fries Cheese N McFloat Combo.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Shake Shake Fries Cheese",
+    "price": 101,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Shake Shake Fries Cheese.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Twister Fries N Royal McFloat Combo",
+    "price": 135,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Twister Fries N Royal McFloat Combo.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Twister Fries Regular",
+    "price": 99,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Twister Fries Regular.webp"
+  },
+  {
+    "category": "McDo Fries",
+    "name": "Twister Fries Sharing",
+    "price": 199,
+    "image": "/images/Mcdo (Mega Meal)/McDo Fries/Twister Fries Sharing.webp"
+  },
+  {
+    "category": "McSpaghetti Menu",
+    "name": "1 pc. Chicken McDo with McSpaghetti & Fries Meal",
+    "price": 262,
+    "image": "/images/Mcdo (Mega Meal)/McSpaghetti Menu/1-pc. Chicken McDo with McSpaghetti & Fries Meal.webp"
+  },
+  {
+    "category": "McSpaghetti Menu",
+    "name": "1 pc. Chicken McDo with McSpaghetti Meal",
+    "price": 201,
+    "image": "/images/Mcdo (Mega Meal)/McSpaghetti Menu/1-pc. Chicken McDo with McSpaghetti Meal.webp"
+  },
+  {
+    "category": "McSpaghetti Menu",
+    "name": "1 pc. Spicy Chicken McDo with McSpaghetti & Fries Meal",
+    "price": 267,
+    "image": "/images/Mcdo (Mega Meal)/McSpaghetti Menu/1-pc. Spicy Chicken McDo with McSpaghetti & Fries Meal.webp"
+  },
+  {
+    "category": "McSpaghetti Menu",
+    "name": "1 pc. Spicy Chicken McDo with McSpaghetti Meal",
+    "price": 206,
+    "image": "/images/Mcdo (Mega Meal)/McSpaghetti Menu/1-pc. Spicy Chicken McDo with McSpaghetti Meal.webp"
+  },
+  {
+    "category": "McSpaghetti Menu",
+    "name": "McSpaghetti Meal",
+    "price": 105,
+    "image": "/images/Mcdo (Mega Meal)/McSpaghetti Menu/McSpaghetti Meal.webp"
+  },
+  {
+    "category": "McSpaghetti Menu",
+    "name": "McSpaghetti with Burger McDo Meal",
+    "price": 149,
+    "image": "/images/Mcdo (Mega Meal)/McSpaghetti Menu/McSpaghetti with Burger McDo Meal.webp"
+  },
+  {
+    "category": "McSpaghetti Menu",
+    "name": "McSpaghetti with Fries Meal",
+    "price": 168,
+    "image": "/images/Mcdo (Mega Meal)/McSpaghetti Menu/McSpaghetti with Fries Meal.webp"
+  },
+  {
+    "category": "McSpaghetti Menu",
+    "name": "Mega Meal – Chicken McDo with Rice & McSpaghetti",
+    "price": 215,
+    "image": "/images/Mcdo (Mega Meal)/McSpaghetti Menu/Mega Meal – Chicken McDo with Rice & McSpaghetti.webp"
+  },
+  {
+    "category": "McSpaghetti Menu",
+    "name": "Mega Meal – Spicy Chicken McDo with Rice & McSpaghetti",
+    "price": 221,
+    "image": "/images/Mcdo (Mega Meal)/McSpaghetti Menu/Mega Meal – Spicy Chicken McDo with Rice & McSpaghetti.webp"
+  },
+  {
+    "category": "Rice Bowls",
+    "name": "1 pc mushroom pepper steak and fries meal",
+    "price": 143,
+    "image": "/images/Mcdo (Mega Meal)/Rice Bowls/1-pc-mushroom-pepper-steak-and-fries-meal.webp"
+  },
+  {
+    "category": "Rice Bowls",
+    "name": "2 pc mushroom pepper steak and fries meal",
+    "price": 208,
+    "image": "/images/Mcdo (Mega Meal)/Rice Bowls/2-pc-mushroom-pepper-steak-and-fries-meal.webp"
+  },
+  {
+    "category": "Rice Bowls",
+    "name": "sulit busog 1 pc mushroom pepper steak with extra rice meal",
+    "price": 103,
+    "image": "/images/Mcdo (Mega Meal)/Rice Bowls/sulit-busog-1-pc-mushroom-pepper-steak-with-extra-rice-meal.webp"
+  },
+  {
+    "category": "Sauces",
+    "name": "Cheese Dunk",
+    "price": 55,
+    "image": "/images/Mcdo (Mega Meal)/Sauces/Cheese Dunk.webp"
+  },
+  {
+    "category": "Sauces",
+    "name": "Chili Con Carne Dunk",
+    "price": 55,
+    "image": "/images/Mcdo (Mega Meal)/Sauces/Chili Con Carne Dunk.webp"
+  },
+  {
+    "category": "Sauces",
+    "name": "Extra BBQ Sauce",
+    "price": 17,
+    "image": "/images/Mcdo (Mega Meal)/Sauces/Extra BBQ Sauce.webp"
+  },
+  {
+    "category": "Sauces",
+    "name": "Extra Cheese",
+    "price": 17,
+    "image": "/images/Mcdo (Mega Meal)/Sauces/Extra Cheese.webp"
+  },
+  {
+    "category": "Sauces",
+    "name": "Extra Crispy Chicken Fillet Ala King Sauce",
+    "price": 11,
+    "image": "/images/Mcdo (Mega Meal)/Sauces/Extra Crispy Chicken Fillet Ala King Sauce.webp"
+  },
+  {
+    "category": "Sauces",
+    "name": "Extra Gravy",
+    "price": 11,
+    "image": "/images/Mcdo (Mega Meal)/Sauces/Extra Gravy.webp"
+  },
+  {
+    "category": "Sauces",
+    "name": "Extra Mayonnaise",
+    "price": 17,
+    "image": "/images/Mcdo (Mega Meal)/Sauces/Extra Mayonnaise.webp"
+  },
+  {
+    "category": "Sauces",
+    "name": "Extra McSpaghetti Sauce",
+    "price": 25,
+    "image": "/images/Mcdo (Mega Meal)/Sauces/Extra McSpaghetti Sauce.webp"
+  },
+  {
+    "category": "Sauces",
+    "name": "Extra Mushroom Pepper Steak Sauce",
+    "price": 11,
+    "image": "/images/Mcdo (Mega Meal)/Sauces/Extra Mushroom Pepper Steak Sauce.webp"
+  },
+  {
+    "category": "Sauces",
+    "name": "Extra Sweet N Sour Sauce",
+    "price": 17,
+    "image": "/images/Mcdo (Mega Meal)/Sauces/Extra Sweet N Sour Sauce.webp"
+  },
+  {
+    "category": "Sauces",
+    "name": "Tartar Sauce",
+    "price": 17,
+    "image": "/images/Mcdo (Mega Meal)/Sauces/Tartar Sauce.webp"
+  },
+  {
+    "category": "Sauces",
+    "name": "Thousand Island Sauce",
+    "price": 18,
+    "image": "/images/Mcdo (Mega Meal)/Sauces/Thousand Island Sauce.webp"
+  },
+  {
+    "category": "Special Meals",
+    "name": "Choco Lava Puff",
+    "price": 77,
+    "image": "/images/Mcdo (Mega Meal)/Special Meals/Choco Lava Puff.webp"
+  },
+  {
+    "category": "Special Meals",
+    "name": "Crispy Chicken Sandwich with Poptato Meal",
+    "price": 143,
+    "image": "/images/Mcdo (Mega Meal)/Special Meals/Crispy Chicken Sandwich with Poptato Meal.webp"
+  },
+  {
+    "category": "Special Meals",
+    "name": "Ebi Burger Meal",
+    "price": 265,
+    "image": "/images/Mcdo (Mega Meal)/Special Meals/Ebi Burger Meal.webp"
+  },
+  {
+    "category": "Special Meals",
+    "name": "Large Poptato",
+    "price": 100,
+    "image": "/images/Mcdo (Mega Meal)/Special Meals/Large Poptato.webp"
+  },
+  {
+    "category": "Special Meals",
+    "name": "Matcha McFlurry with Oreo Solo",
+    "price": 83,
+    "image": "/images/Mcdo (Mega Meal)/Special Meals/Matcha McFlurry with Oreo Solo.webp"
+  },
+  {
+    "category": "Special Meals",
+    "name": "Medium Poptato with McShaker BBQ",
+    "price": 86,
+    "image": "/images/Mcdo (Mega Meal)/Special Meals/Medium Poptato with McShaker BBQ.webp"
+  },
+  {
+    "category": "Special Meals",
+    "name": "Taro Custard Pie",
+    "price": 51,
+    "image": "/images/Mcdo (Mega Meal)/Special Meals/Taro Custard Pie.webp"
+  },
+  {
+    "category": "Sulit Busog Meals",
+    "name": "Sulit Busog – 1 pc. Chicken Mcdo Meal",
+    "price": 103,
+    "image": "/images/Mcdo (Mega Meal)/Sulit Busog Meals/Sulit Busog – 1-pc. Chicken Mcdo Meal.webp"
+  },
+  {
+    "category": "Sulit Busog Meals",
+    "name": "Sulit Busog Golden Chicken Curry Fillet with Extra Rice Meal",
+    "price": 103,
+    "image": "/images/Mcdo (Mega Meal)/Sulit Busog Meals/Sulit Busog Golden Chicken Curry Fillet with Extra Rice Meal.webp"
+  },
+  {
+    "category": "Sulit Busog Meals",
+    "name": "Sulit Busog – 1 pc. Chicken McDo with Extra Rice and Drink Meal",
+    "price": 128,
+    "image": "/images/Mcdo (Mega Meal)/Sulit Busog Meals/Sulit-Busog – 1-pc. Chicken McDo with Extra Rice and Drink Meal.webp"
+  },
+  {
+    "category": "Sulit Busog Meals",
+    "name": "Sulit Busog – 1 pc. Mushroom Pepper Steak with Extra Rice Meal",
+    "price": 103,
+    "image": "/images/Mcdo (Mega Meal)/Sulit Busog Meals/Sulit-Busog – 1-pc. Mushroom Pepper Steak with Extra Rice Meal.webp"
+  },
+  {
+    "category": "Sulit Busog Meals",
+    "name": "Sulit Busog Crispy Chicken Fillet Ala King w Extra Rice",
+    "price": 103,
+    "image": "/images/Mcdo (Mega Meal)/Sulit Busog Meals/Sulit-Busog Crispy Chicken Fillet Ala King w Extra Rice.webp"
+  },
+  {
+    "category": "Sulit Busog Meals",
+    "name": "Sulit Busog Crispy Chicken Fillet with Extra Rice and Regular Drink",
+    "price": 128,
+    "image": "/images/Mcdo (Mega Meal)/Sulit Busog Meals/Sulit-Busog Crispy Chicken Fillet with Extra Rice and Regular Drink.webp"
+  }
+]

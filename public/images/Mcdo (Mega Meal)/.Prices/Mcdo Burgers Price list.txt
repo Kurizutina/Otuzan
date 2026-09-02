@@ -1,0 +1,21 @@
+Mcdo Burgers
+
+Triple Cheeseburger Meal - ₱ 290 
+Double Cheeseburger Meal - ₱ 250 
+Cheeseburger Meal - ₱ 156 
+Big Mac Meal - ₱ 284 
+Quarter Pounder with Cheese Meal - ₱ 284.00 
+Quarter Pounder with Cheese, Lettuce, & Tomatoes Meal - ₱ 319.00
+Double Quarter Pounder with Cheese Meal - ₱ 346
+McChicken Meal - ₱ 234
+Double McChicken Meal - ₱ 264
+Crispy Chicken Fillet Sandwich with Fries Meal - ₱ 177
+Crispy Chicken Sandwich with Lettuce & Tomatoes Meal - ₱ 212
+Cheesy Burger McDo Meal - ₱ 167
+Burger McDo Meal - ₱ 157
+Cheeseburger with Lettuce & Tomatoes - ₱ 191
+Double Cheeseburger with Lettuce & Tomatoes Meal - ₱ 285
+Burger McDo with Lettuce & Tomatoes Meal - ₱ 192
+Double Big Mac Meal - ₱ 346 
+The BCB Meal - ₱ 277
+Cheesburger with regular fries - ₱ 121

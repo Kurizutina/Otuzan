@@ -1,0 +1,318 @@
+import React from 'react';
+
+const AuthForm = ({
+  mode,
+  email,
+  password,
+  confirmPassword,
+  accessCode,
+  showPassword,
+  selectedRole,
+  roles,
+  username,
+  name,
+  address,
+  contactNumber,
+
+  onEmailChange,
+  onPasswordChange,
+  onConfirmPasswordChange,
+  onAccessCodeChange,
+  onUsernameChange,
+  onNameChange,
+  onAddressChange,
+  onContactNumberChange,
+  onTogglePassword,
+  onSubmit
+}) => {
+  const currentRole =
+    roles[selectedRole.toUpperCase()] ||
+    roles.CUSTOMER;
+
+  const isRegister = mode === 'register';
+
+  const getButtonText = () => {
+    if (isRegister) {
+      return currentRole.requiresCode
+        ? 'Verify & Create Account'
+        : 'Create account';
+    }
+
+    return currentRole.requiresCode
+      ? 'Verify & Log in'
+      : 'Log in';
+  };
+
+  const renderCustomerFields = () => {
+    if (
+      selectedRole !== 'customer' ||
+      !isRegister
+    ) {
+      return null;
+    }
+
+    return (
+      <>
+        <div className="form-group">
+          <div className="input-icon-wrapper">
+            <i className="fas fa-user-circle input-icon"></i>
+
+            <input
+              type="text"
+              className="input-field with-icon"
+              placeholder="Username"
+              value={username}
+              onChange={onUsernameChange}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <div className="input-icon-wrapper">
+            <i className="fas fa-map-marker-alt input-icon"></i>
+
+            <textarea
+              className="input-field with-icon textarea-field"
+              placeholder="Delivery address"
+              value={address}
+              onChange={onAddressChange}
+              required
+              rows="2"
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <div className="input-icon-wrapper">
+            <i className="fas fa-phone input-icon"></i>
+
+            <input
+              type="tel"
+              className="input-field with-icon"
+              placeholder="Contact number"
+              value={contactNumber}
+              onChange={onContactNumberChange}
+              required
+            />
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  const renderDriverAdminFields = () => {
+    if (
+      (selectedRole !== 'driver' &&
+        selectedRole !== 'admin') ||
+      !isRegister
+    ) {
+      return null;
+    }
+
+    return (
+      <>
+        <div className="form-group">
+          <div className="input-icon-wrapper">
+            <i className="fas fa-id-card input-icon"></i>
+
+            <input
+              type="text"
+              className="input-field with-icon"
+              placeholder="Full name"
+              value={name}
+              onChange={onNameChange}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="form-group">
+          <div className="input-icon-wrapper">
+            <i className="fas fa-phone input-icon"></i>
+
+            <input
+              type="tel"
+              className="input-field with-icon"
+              placeholder="Contact number"
+              value={contactNumber}
+              onChange={onContactNumberChange}
+              required
+            />
+          </div>
+        </div>
+      </>
+    );
+  };
+
+  return (
+    <form onSubmit={onSubmit}>
+
+      {isRegister && (
+        <div className="role-fields-section">
+
+          <div className="section-label">
+            {selectedRole === 'customer'
+              ? '📦 Customer Information'
+              : '👤 Personal Information'}
+          </div>
+
+          {renderCustomerFields()}
+          {renderDriverAdminFields()}
+
+        </div>
+      )}
+
+      {/* Email */}
+      <div className="form-group">
+        <div className="input-icon-wrapper">
+
+          <i className="fas fa-envelope input-icon"></i>
+
+          <input
+            type="email"
+            className="input-field with-icon"
+            placeholder="Email address"
+            value={email}
+            onChange={onEmailChange}
+            required
+          />
+
+        </div>
+      </div>
+
+      {/* Access Code */}
+      {currentRole.requiresCode && (
+        <div className="form-group">
+
+          <div className="access-code-wrapper">
+
+            <input
+              type="password"
+              className="input-field access-code-input"
+              placeholder={currentRole.codeLabel}
+              value={accessCode}
+              onChange={onAccessCodeChange}
+              required
+            />
+
+            <div className="access-code-icon">
+              <i className="fas fa-key"></i>
+            </div>
+
+          </div>
+
+          {isRegister && (
+            <div className="code-hint">
+
+              <i className="fas fa-info-circle"></i>
+
+              <span>
+                Demo:{' '}
+                {selectedRole === 'driver'
+                  ? 'DRIVER2024'
+                  : 'ADMIN2024'}
+              </span>
+
+            </div>
+          )}
+
+        </div>
+      )}
+
+      {/* Password */}
+      <div className="form-group password-wrapper">
+
+        <div className="input-icon-wrapper">
+
+          <i className="fas fa-lock input-icon"></i>
+
+          <input
+            type={
+              showPassword
+                ? 'text'
+                : 'password'
+            }
+            className="input-field with-icon"
+            placeholder="Password"
+            value={password}
+            onChange={onPasswordChange}
+            required
+          />
+
+        </div>
+
+        <button
+          type="button"
+          className="toggle-password"
+          onClick={onTogglePassword}
+        >
+          <i
+            className={
+              showPassword
+                ? 'fas fa-eye-slash'
+                : 'fas fa-eye'
+            }
+          ></i>
+        </button>
+
+      </div>
+
+      {/* Confirm Password */}
+      {isRegister && (
+        <div className="form-group password-wrapper">
+
+          <div className="input-icon-wrapper">
+
+            <i className="fas fa-lock input-icon"></i>
+
+            <input
+              type={
+                showPassword
+                  ? 'text'
+                  : 'password'
+              }
+              className="input-field with-icon"
+              placeholder="Confirm password"
+              value={confirmPassword}
+              onChange={onConfirmPasswordChange}
+              required
+            />
+
+          </div>
+
+        </div>
+      )}
+
+      {/* Submit */}
+      <button
+        type="submit"
+        className="action-btn"
+        style={{
+          background:
+            currentRole.requiresCode
+              ? `linear-gradient(115deg, ${currentRole.color} 0%, #FF9846 100%)`
+              : `linear-gradient(115deg, #F9C12F 0%, #FF9846 100%)`,
+
+          boxShadow:
+            `0 8px 18px ${currentRole.color}40`
+        }}
+      >
+
+        {currentRole.requiresCode ? (
+          <i className="fas fa-shield-check"></i>
+        ) : mode === 'login' ? (
+          <i className="fas fa-sign-in-alt"></i>
+        ) : (
+          <i className="fas fa-user-plus"></i>
+        )}
+
+        {getButtonText()}
+
+      </button>
+
+    </form>
+  );
+};
+
+export default AuthForm;

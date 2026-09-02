@@ -1,0 +1,204 @@
+/* ==========================================
+   BRAND CARD
+   ========================================== */
+
+.brand-card {
+  width: 100%;
+  min-width: 0;
+  min-height: 175px;
+  padding: 18px;
+
+  box-sizing: border-box;
+  border: none;
+  font-family: inherit;
+
+  background-color: #ffffff;
+  border-radius: 14px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+
+  cursor: pointer;
+
+  position: relative;
+  overflow: hidden;
+
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+
+}
+
+.brand-card:focus-visible {
+  outline: 3px solid rgba(218, 28, 92, 0.35);
+  outline-offset: 3px;
+}
+
+
+/* =========================
+   IMAGE
+   ========================= */
+
+.brand-image-container {
+  width: 105px;
+  height: 105px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  overflow: hidden;
+
+  background-color: #f5f5f5;
+
+  position: relative;
+  z-index: 1;
+}
+
+.brand-image {
+  width: 100%;
+  height: 100%;
+
+  padding: 7px;
+  object-fit: contain;
+  object-position: center;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.brand-image-zoom-medium,
+.brand-image-zoom-large {
+  padding: 0;
+  object-fit: cover;
+  transform-origin: center;
+}
+
+.brand-image-zoom-medium {
+  transform: scale(1.16);
+}
+
+.brand-image-zoom-large {
+  transform: scale(1.34);
+}
+
+
+/* =========================
+   TEMPORARY PLACEHOLDER
+   ========================= */
+
+.brand-image-placeholder {
+  width: 100%;
+  height: 100%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background-color: #f1f1f1;
+
+  color: #DA1C5C;
+
+  font-size: 30px;
+}
+
+
+/* =========================
+   BRAND NAME
+   ========================= */
+
+.brand-name {
+  width: 100%;
+
+  text-align: center;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  color: #333333;
+
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+/* ==========================================
+   COLORED HOVER EFFECT
+   ========================================== */
+
+.brand-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--card-color);
+
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+
+  z-index: 0;
+}
+
+.brand-card:hover {
+  transform: translateY(5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.18);
+}
+
+.brand-card:hover::before {
+  transform: translateY(0);
+}
+
+.brand-card.food {
+  --card-color: #F15A29;
+}
+
+.brand-card.item {
+  --card-color: #F9C12F;
+}
+
+.brand-card.bills {
+  --card-color: #39A852;
+}
+
+.brand-image-container,
+.brand-name {
+  position: relative;
+  z-index: 1;
+}
+
+/* =========================
+   MOBILE
+   ========================= */
+
+@media (max-width: 767px) {
+
+  .brand-card {
+    width: 100%;
+    min-width: 0;
+    min-height: 145px;
+
+    padding: 12px;
+
+    border-radius: 12px;
+
+    gap: 8px;
+  }
+
+  .brand-image-container {
+    width: 82px;
+    height: 82px;
+  }
+
+  .brand-image-placeholder {
+    font-size: 24px;
+  }
+
+  .brand-name {
+    font-size: 12px;
+  }
+
+}
+

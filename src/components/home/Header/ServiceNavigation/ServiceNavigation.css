@@ -1,0 +1,150 @@
+/* ==========================================
+   SERVICE NAVIGATION
+   ========================================== */
+
+.service-navigation {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  width: auto;
+  flex-shrink: 0;
+
+  gap: 6px;
+
+  margin: 0;
+  padding: 5px;
+
+  background: rgba(176, 23, 72, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+}
+
+
+/* ==========================================
+   SERVICE TAB
+   ========================================== */
+
+.service-tab {
+  border: 1px solid transparent;
+  outline: none;
+
+  cursor: pointer;
+
+  background: transparent;
+  color: white;
+
+  font-family: inherit;
+
+  padding: 8px 20px;
+
+  min-width: 162px;
+
+  border-radius: 11px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 10px;
+
+  font-size: 15px;
+  font-weight: 600;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+
+/* ==========================================
+   HOVER
+   ========================================== */
+
+.service-tab:hover {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+
+/* ==========================================
+   ACTIVE TAB
+   ========================================== */
+
+.service-tab.active {
+  background-color: white;
+  color: #DA1C5C;
+  border-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 3px 10px rgba(111, 10, 45, 0.18);
+}
+
+.service-tab:active {
+  transform: scale(0.98);
+}
+
+.service-tab:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 2px;
+}
+
+
+/* ==========================================
+   ICON
+   ========================================== */
+
+.service-tab i {
+  font-size: 16px;
+}
+
+
+/* ==========================================
+   MOBILE
+   ========================================== */
+
+@media (max-width: 767px) {
+
+  .service-navigation {
+    width: 100%;
+    gap: 4px;
+    margin-top: 2px;
+    padding: 4px;
+    border-radius: 13px;
+  }
+
+  .service-tab {
+    min-width: 0;
+
+    flex: 1;
+
+    padding: 9px 5px;
+
+    font-size: 12px;
+
+    gap: 5px;
+    border-radius: 9px;
+  }
+
+  .service-tab i {
+    font-size: 13px;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1250px) {
+  .service-tab {
+    min-width: 125px;
+    padding-inline: 12px;
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 420px) {
+  .service-tab {
+    flex-direction: column;
+    gap: 3px;
+    padding: 6px 2px;
+    font-size: 10px;
+  }
+}

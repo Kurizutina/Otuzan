@@ -1,0 +1,56 @@
+McCafe Coffee Menu 
+
+McCafé Cereal Milk Iced Latte - ₱ 160.00 
+McCafé Cereal Milk Iced Coffee - ₱ 83.00 
+McCafé Cereal Milk Premium Roast Coffee - ₱ 73.00 
+McCafé Premium Roast Coffee - ₱ 63.00 
+McCafé Iced Coffee Black Medium - ₱ 59.00 
+McCafé Iced Coffee Original - ₱ 63.00 
+McCafé Coffee Float - ₱ 82.00 
+McCafé Iced Coffee Vanilla - ₱ 99.00 
+McCafé Iced Coffee Chocolate - ₱ 79.00 
+McCafé Strawberry Oreo Frappe - ₱ 169.00 
+Cappuccino - ₱ 145.00 
+Espresso - ₱ 95.00 
+McCafé Strawberry Smoothie - ₱ 159.00 
+Macchiato - ₱ 95.00 
+Americano - ₱ 135.00 
+Mochaccino - ₱ 150.00 
+Café Latte - ₱ 145.00 
+Flat White - ₱ 145.00 
+McCafé Iced Chocolate - ₱ 149.00 
+McCafé Iced Americano - ₱ 140.00 
+McCafé Iced Latte - ₱ 150.00 
+McCafé Iced c - ₱ 155.00 
+McCafé Caramel Frappe - ₱ 169.00 
+McCafé Caramel Oreo Frappe - ₱ 179.00 
+McCafé Mocha Frappe - ₱ 169.00 
+McCafé Mocha Oreo Frappe - ₱ 179.00 
+McCafé Double Choco Frappe - ₱ 169.00 
+McCafé Jasmine Tea - ₱ 99.00 
+McCafé Peppermint Tea - ₱ 99.00 
+McCafé Black Tea - ₱ 99.00 
+McCafé Iced Tea - ₱ 129.00 
+McCafé Dalandan Smoothie - ₱ 159.00  
+Choco Chip Cookies - ₱ 84.00 
+Choco Chip Banana Slice - ₱ 89.00 
+Caramel Cinnamon - ₱ 114.00 
+Cheese and Bacon Croissant - ₱ 139.00 
+Sausage Croissant - ₱ 139.00 
+Dark Chocolate Cake - ₱ 160.00 
+Blueberry Cheesecake - ₱ 180.00 
+Oreo Cheesecake - ₱ 180.00 
+Chicken Pesto Wrap - ₱ 179.00 
+Americano - ₱ 120.00 
+Cafe Latte - ₱ 130.00 
+Mochaccino - ₱ 135.00 
+McCafé Americano Medium - ₱ 110.00 
+Iced Mocha - ₱ 149 
+Iced Latte - ₱ 99 
+Iced Americano - ₱ 124 
+McCafé Cappuccino Medium - ₱ 139 
+McCafé Iced Americano Medium - ₱ 99 
+McCafé Iced Latte Medium - ₱ 99 
+McCafé Iced Mocha Medium - ₱ 99 
+McCafé Mochaccino Medium - ₱ 99
+McCafé Hot Latte Medium - ₱ 99 

@@ -1,0 +1,62 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Tahoma, sans-serif;
+  background: #ffffff;
+  min-height: 100vh;
+  margin: 0;
+}
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.app-container:has(.home-page),
+.app-container:has(.jollibee-page) {
+  display: block;
+  padding: 0;
+}
+
+/* ================================
+   HOMEPAGE
+================================ */
+
+.home-page {
+  width: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0 0 40px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1023px) {
+  .home-page {
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 767px) {
+  .home-page {
+    padding-top: 0;
+  }
+}
+
+.home-header-section {
+  width: 100%;
+  position: relative;
+  z-index: 10;
+}
+
+.home-search-section {
+  width: 100%;
+  position: relative;
+  z-index: 5;
+}
