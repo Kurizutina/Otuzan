@@ -26,10 +26,10 @@
   transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
 
-.brand-card:hover { transform:translateY(-3px); border-color:#f3c4d3; box-shadow:var(--shadow-card-hover); }
+.brand-card:hover { transform:translateY(-3px); border-color:#f5d6bb; box-shadow:var(--shadow-card-hover); }
 
 .brand-card:focus-visible {
-  outline: 3px solid rgba(218, 28, 92, 0.35);
+  outline: 3px solid rgba(188,70,16, 0.35);
   outline-offset: 3px;
   border-radius: var(--radius-pill, 999px);
 }

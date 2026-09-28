@@ -24,7 +24,7 @@
   list-style: none;
   border-radius: 12px;
   background: #fff;
-  box-shadow: 0 14px 34px rgba(48, 16, 28, 0.22);
+  box-shadow: 0 14px 34px rgba(61,34,14, 0.22);
 }
 
 .location-picker-menu button {
@@ -41,7 +41,7 @@
 }
 
 .location-picker-menu button:hover { background: #f6eef1; }
-.location-picker-menu button.active { background: #fff0f5; color: var(--color-primary); font-weight: 700; }
+.location-picker-menu button.active { background: #fff3ea; color: var(--color-primary); font-weight: 700; }
 
 /* Header variant: compact pill sitting next to the brand name - the header
    is a white/neutral bar (not a solid brand-color fill), so this uses a

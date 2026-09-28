@@ -17,7 +17,7 @@
   margin: 0;
   padding: 4px 8px;
 
-  background: #fff5f8;
+  background: #fff7f0;
   border: 1px solid #f6dbe4;
   border-radius: 12px;
 }
@@ -67,8 +67,8 @@
    ========================================== */
 
 .service-tab:hover {
-  background-color: #ffe9f0;
-  border-color: #f6cddd;
+  background-color: #ffead9;
+  border-color: #f7e2cd;
 }
 
 
@@ -80,7 +80,7 @@
   background-color: var(--color-primary, var(--color-primary));
   color: #fff;
   border-color: var(--color-primary, var(--color-primary));
-  box-shadow: 0 3px 10px rgba(111, 10, 45, 0.18);
+  box-shadow: 0 3px 10px rgba(102,45,15, 0.18);
 }
 
 .service-home-tab { min-width: 92px; }

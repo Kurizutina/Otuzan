@@ -317,7 +317,7 @@ const AuthForm = ({
         className="action-btn"
         style={{
           background: 'linear-gradient(115deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)',
-          boxShadow: '0 8px 18px rgba(218, 28, 92, 0.25)'
+          boxShadow: '0 8px 18px rgba(188,70,16, 0.25)'
         }}
       >
 

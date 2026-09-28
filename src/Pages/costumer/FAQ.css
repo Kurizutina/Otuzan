@@ -37,7 +37,7 @@
   padding-top: clamp(36px, 6vw, 64px);
   padding-bottom: clamp(40px, 6vw, 72px);
   padding-inline: clamp(20px, 5vw, 56px);
-  background: linear-gradient(120deg, #e51d5a 0%, #ed3856 52%, #fb6940 100%);
+  background: linear-gradient(120deg, #bc4610 0%, #d8620f 52%, #fb6940 100%);
 }
 
 .faq-page-home .faq-heading { text-align: center; }
@@ -45,7 +45,7 @@
 .faq-page-home .faq-heading h2,
 .faq-page-home .faq-heading p { color: #fff; }
 .faq-page-home .faq-list { max-width: 760px; margin: 0 auto; }
-.faq-page-home .faq-item { border-color: rgba(255,255,255,.55); box-shadow: 0 4px 14px rgba(107,19,48,.16); }
+.faq-page-home .faq-item { border-color: rgba(255,255,255,.55); box-shadow: 0 4px 14px rgba(102,45,15,.16); }
 
 .faq-heading p {
   margin: 0;
@@ -70,7 +70,7 @@
 .faq-item:focus-within {
   transform: translateY(-2px);
   border-color: var(--color-primary, var(--color-primary));
-  box-shadow: 0 8px 20px rgba(111, 28, 56, .14);
+  box-shadow: 0 8px 20px rgba(102,45,15, .14);
 }
 
 .faq-item summary {

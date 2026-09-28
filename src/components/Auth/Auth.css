@@ -132,7 +132,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 12px 18px -8px rgba(218, 28, 92, 0.4);
+  box-shadow: 0 12px 18px -8px rgba(188,70,16, 0.4);
   margin-bottom: 0.8rem;
   transition: transform 0.3s ease;
 }
@@ -445,7 +445,7 @@ select.input-field {
 .input-field:focus {
   border-color: var(--color-primary);
   background: white;
-  box-shadow: 0 0 0 4px rgba(218, 28, 92, 0.1);
+  box-shadow: 0 0 0 4px rgba(188,70,16, 0.1);
 }
 
 /* Access code */
@@ -506,7 +506,7 @@ select.input-field {
   letter-spacing: 0.3px;
   color: white;
   background: linear-gradient(115deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-  box-shadow: 0 8px 18px rgba(218, 28, 92, 0.25);
+  box-shadow: 0 8px 18px rgba(188,70,16, 0.25);
   margin-top: 0.8rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -530,7 +530,7 @@ select.input-field {
 /* Keep the password-reset call to action consistent with the login button. */
 .reset-link-btn {
   background: linear-gradient(115deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
-  box-shadow: 0 8px 18px rgba(218, 28, 92, 0.25);
+  box-shadow: 0 8px 18px rgba(188,70,16, 0.25);
 }
 
 /* Divider */
@@ -567,7 +567,7 @@ select.input-field {
   padding: 0.15rem 0.35rem;
   border: 0;
   background: transparent;
-  color: #8b3158;
+  color: #9a3a0b;
   font: 600 0.85rem Tahoma, sans-serif;
   cursor: pointer;
 }

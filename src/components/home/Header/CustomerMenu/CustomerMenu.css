@@ -19,7 +19,7 @@
   transition: background-color 0.2s ease, transform 0.2s ease;
 }
 
-.header-guest-auth-button:hover { background: #ffe9ef; transform: scale(1.03); }
+.header-guest-auth-button:hover { background: #ffeee2; transform: scale(1.03); }
 .header-guest-auth-button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
 @media (max-width: 440px) {
@@ -38,7 +38,7 @@
   border-radius: 16px;
   background: #fff;
   color: #392f34;
-  box-shadow: 0 16px 40px rgba(61, 19, 34, 0.2);
+  box-shadow: 0 16px 40px rgba(61,34,14, 0.2);
 }
 
 .customer-menu-summary {
@@ -57,7 +57,7 @@
   height: 38px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: #fff0f5;
+  background: #fff3ea;
   color: var(--color-primary);
   font-weight: 800;
 }
@@ -102,8 +102,8 @@
 }
 
 .customer-menu-popover > button:hover {
-  background: #fff3f7;
-  color: #c21751;
+  background: #fff6ee;
+  color: #9a3a0b;
 }
 
 .customer-menu-popover .customer-logout-option {
@@ -129,7 +129,7 @@
   border-radius: 22px;
   background: #fff;
   color: #392f34;
-  box-shadow: 0 24px 70px rgba(63, 8, 29, 0.28);
+  box-shadow: 0 24px 70px rgba(61,34,14, 0.28);
 }
 
 .profile-modal-header {
@@ -166,8 +166,8 @@
   flex-shrink: 0;
   border: 0;
   border-radius: 50%;
-  background: #f8edf1;
-  color: #a51546;
+  background: #fbf1e8;
+  color: #7a2e08;
   font-size: 25px;
   cursor: pointer;
 }
@@ -200,13 +200,13 @@
 
 .profile-field > div:focus-within {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(218, 28, 92, 0.1);
+  box-shadow: 0 0 0 3px rgba(188,70,16, 0.1);
 }
 
 .profile-field > div > i {
   width: 42px;
   flex-shrink: 0;
-  color: #c85a7f;
+  color: #d8620f;
   text-align: center;
 }
 

@@ -108,7 +108,7 @@
 .home-search:focus-within {
   border-color: var(--color-primary);
 
-  box-shadow: 0 0 0 3px rgba(218, 28, 92, 0.12);
+  box-shadow: 0 0 0 3px rgba(188,70,16, 0.12);
 }
 
 
