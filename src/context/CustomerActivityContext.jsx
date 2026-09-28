@@ -180,33 +180,6 @@ const syncAssignmentToBackend = (backendOrderId, riderId) => {
     .catch(() => {});
 };
 
-// Post-delivery report: the owning customer flags a problem with a delivered
-// order within the server's 24h window. Same broadcast-on-rejection rule as
-// syncStatusToBackend - a rejected report (window closed, already reported
-// from another device) still forces an immediate refetch so the button/flag
-// corrects itself instead of looking like the click did nothing. The server's
-// reason is returned so the caller can surface it.
-const syncReportToBackend = (backendOrderId, reason) => {
-  const headers = authHeaders();
-  if (!backendOrderId || !headers) {
-    return Promise.resolve({ ok: false, error: 'Please sign in again to submit a report.' });
-  }
-  return fetch(`${API_BASE_URL}/api/orders/${backendOrderId}/report`, {
-    method: 'POST', headers, body: JSON.stringify({ reason })
-  })
-    .then(async (response) => {
-      broadcastOrderProgressChanged();
-      if (response.ok) return { ok: true };
-      let error = 'Report could not be submitted. Please try again.';
-      try {
-        const body = await response.json();
-        if (body?.error) error = body.error;
-      } catch { /* keep the fallback message */ }
-      return { ok: false, error };
-    })
-    .catch(() => ({ ok: false, error: 'Could not reach the server. Please try again.' }));
-};
-
 // A bill is placed only after the API confirms it, so admin reports and
 // customer tracking always refer to a persisted payment.
 const syncPaymentToBackend = async (order) => {
@@ -689,28 +662,6 @@ export const CustomerActivityProvider = ({ children }) => {
     syncAssignmentToBackend(currentOrder?.backendOrderId, rider?.id);
   };
 
-  const reportOrder = async (orderRef, reason) => {
-    if (getSessionUser()?.role !== 'customer') return { ok: false, error: 'Only the customer can report a problem with this order.' };
-    const orderId = orderRef?.id ?? orderRef;
-    const latest = loadActivity();
-    const currentOrder = (latest.orders || orders).find((order) => order.id === orderId);
-    // Same backend-only fallback as updateOrderStatus above: a synthesized
-    // cross-device order has no localStorage copy to patch, but is still
-    // real and reportable through the backend id it carries.
-    const backendOrderId = currentOrder?.backendOrderId || orderRef?.backendOrderId;
-    if (!backendOrderId) return { ok: false, error: 'This order is not linked to the server yet.' };
-    const result = await syncReportToBackend(backendOrderId, reason);
-    if (!result.ok || !currentOrder) return result;
-    // Optimistic local flag so the badge and reopened chat render without
-    // waiting for the poll; applyBackendTruth keeps it authoritative after.
-    const after = loadActivity();
-    const nextOrders = (after.orders || []).map((order) => order.id === orderId
-      ? { ...order, reportedAt: new Date().toISOString(), reportReason: reason, updatedAt: new Date().toISOString() }
-      : order);
-    updateAll(after.cart || cart, nextOrders, after.notifications || notifications);
-    return result;
-  };
-
   const updatePaymentStatus = async (orderRef, paymentStatus) => {
     if (getSessionUser()?.role !== 'admin' || !['verified', 'rejected'].includes(paymentStatus)) return;
     const orderId = orderRef?.id ?? orderRef;
@@ -748,7 +699,6 @@ export const CustomerActivityProvider = ({ children }) => {
     markNotificationsRead,
     updateOrderStatus,
     assignOrderToRider,
-    reportOrder,
     updatePaymentStatus
   // State is intentionally included so consumers always receive current actions.
   // eslint-disable-next-line react-hooks/exhaustive-deps

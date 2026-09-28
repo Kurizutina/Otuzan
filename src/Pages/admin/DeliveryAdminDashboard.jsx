@@ -260,26 +260,6 @@ const HistoryTab = () => {
     return () => controller.abort();
   }, [page, dateFilter, serviceFilter, refreshCount]);
 
-  // Admin dismisses an open post-delivery report: clears the flag server-
-  // side (which also closes the reopened order chat again - both sides key
-  // off the same ReportedAt column) and broadcasts ORDERS_CHANGED_EVENT so
-  // this tab's own fetch (it already listens above) and any other open view
-  // refresh immediately.
-  const dismissReport = (order) => {
-    if (!order.backendOrderId) return;
-    if (!window.confirm('Dismiss this report? The order chat will close again.')) return;
-    const api = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-    fetch(`${api}/api/orders/${order.backendOrderId}/report`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` }
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error();
-        window.dispatchEvent(new Event(ORDERS_CHANGED_EVENT));
-      })
-      .catch(() => window.alert('The report could not be dismissed. Please try again.'));
-  };
-
   if (error) return <section><div className="admin-table-empty">{error}</div></section>;
   if (!result) return <section><div className="admin-table-empty">Loading history…</div></section>;
 
@@ -288,7 +268,7 @@ const HistoryTab = () => {
   return <section>
     <DateFilter value={dateFilter} onChange={setDateFilter} today={today} />
     <div className="admin-filter-row">{['all', 'food', 'item', 'bills'].map((key) => <button className={serviceFilter === key ? 'active' : ''} type="button" onClick={() => setServiceFilter(key)} key={key}>{key === 'all' ? 'All services' : SERVICE_META[key].label}</button>)}</div>
-    <div className="admin-table-wrap"><table><thead><tr><th>Order ID</th><th>Service</th><th>Customer</th><th>Date</th><th>Total</th><th>Rider</th><th>Status</th></tr></thead><tbody>{rows.map((order) => <tr key={order.id}><td>{order.id}</td><td><ServiceBadge service={inferService(order)} /></td><td><OrderCustomerDetails order={order} /></td><td>{new Date(order.createdAt).toLocaleString()}</td><td>{formatCurrency(getOrderTotal(order))}</td><td>{order.assignedRider?.name || '—'}</td><td><span className={`admin-history-status ${order.status}`}>{order.status}</span>{order.reportedAt && <button type="button" className="admin-history-report" title={order.reportReason || 'Customer reported a problem'} onClick={() => dismissReport(order)}><i className="fa-solid fa-flag" aria-hidden="true" /> Reported · Dismiss</button>}</td></tr>)}</tbody></table>{!rows.length && <div className="admin-table-empty">{dateFilter ? 'No completed transactions on that date.' : 'No completed transactions on this page.'}</div>}</div>
+    <div className="admin-table-wrap"><table><thead><tr><th>Order ID</th><th>Service</th><th>Customer</th><th>Date</th><th>Total</th><th>Rider</th><th>Status</th></tr></thead><tbody>{rows.map((order) => <tr key={order.id}><td>{order.id}</td><td><ServiceBadge service={inferService(order)} /></td><td><OrderCustomerDetails order={order} /></td><td>{new Date(order.createdAt).toLocaleString()}</td><td>{formatCurrency(getOrderTotal(order))}</td><td>{order.assignedRider?.name || '—'}</td><td><span className={`admin-history-status ${order.status}`}>{order.status}</span></td></tr>)}</tbody></table>{!rows.length && <div className="admin-table-empty">{dateFilter ? 'No completed transactions on that date.' : 'No completed transactions on this page.'}</div>}</div>
     {result.last_page > 1 && (
       <div className="admin-pagination">
         <button type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>← Previous</button>
