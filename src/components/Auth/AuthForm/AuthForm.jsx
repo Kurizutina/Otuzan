@@ -7,12 +7,15 @@ const AuthForm = ({
   confirmPassword,
   accessCode,
   showPassword,
+  rememberMe,
+  onRememberMeChange,
   selectedRole,
   roles,
   username,
   name,
   address,
   contactNumber,
+  userType,
 
   onEmailChange,
   onPasswordChange,
@@ -22,6 +25,7 @@ const AuthForm = ({
   onNameChange,
   onAddressChange,
   onContactNumberChange,
+  onUserTypeChange,
   onTogglePassword,
   onSubmit
 }) => {
@@ -54,13 +58,22 @@ const AuthForm = ({
     return (
       <>
         <div className="form-group">
+          <select id="user-type" className="input-field" aria-label="User type" value={userType} onChange={onUserTypeChange} required>
+            <option value="">Select user type</option>
+            <option value="student">Student</option>
+            <option value="non_student">Non-Student</option>
+          </select>
+        </div>
+        <div className="form-group">
           <div className="input-icon-wrapper">
             <i className="fas fa-user-circle input-icon"></i>
 
             <input
               type="text"
               className="input-field with-icon"
-              placeholder="Username"
+              placeholder="Full name"
+              aria-label="Full name"
+              autoComplete="name"
               value={username}
               onChange={onUsernameChange}
               required
@@ -210,7 +223,7 @@ const AuthForm = ({
               <span>
                 Demo:{' '}
                 {selectedRole === 'rider'
-                  ? 'RIDER2024'
+                  ? 'DRIVER2024'
                   : 'ADMIN2024'}
               </span>
 
@@ -258,6 +271,20 @@ const AuthForm = ({
 
       </div>
 
+      {/* Remember me - remembers the email only, never the password */}
+      {!isRegister && (
+        <div className="form-group remember-me-group">
+          <label className="remember-me-label">
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={onRememberMeChange}
+            />
+            Remember my email
+          </label>
+        </div>
+      )}
+
       {/* Confirm Password */}
       {isRegister && (
         <div className="form-group password-wrapper">
@@ -289,13 +316,8 @@ const AuthForm = ({
         type="submit"
         className="action-btn"
         style={{
-          background:
-            currentRole.requiresCode
-              ? `linear-gradient(115deg, ${currentRole.color} 0%, #FF9846 100%)`
-              : `linear-gradient(115deg, #F9C12F 0%, #FF9846 100%)`,
-
-          boxShadow:
-            `0 8px 18px ${currentRole.color}40`
+          background: 'linear-gradient(115deg, var(--color-primary) 0%, var(--color-primary-dark) 100%)',
+          boxShadow: '0 8px 18px rgba(218, 28, 92, 0.25)'
         }}
       >
 

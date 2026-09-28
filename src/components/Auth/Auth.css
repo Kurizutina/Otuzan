@@ -10,6 +10,51 @@
   align-items: center;
 }
 
+/* Login is one task, so keep its greeting and fields in one card. These
+   rules are scoped to .login-page: registration retains its existing layout
+   and all form markup and handlers stay exactly the same. */
+.login-page .auth-layout {
+  width: min(100%, 900px);
+  min-height: 520px;
+  flex-direction: row;
+  gap: 0;
+  overflow: hidden;
+  border: 2px solid #f0f0f0;
+  border-radius: 2rem;
+  background: #fff;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+.login-page .auth-left, .login-page .auth-right { width: 50%; flex: 1; }
+.login-page .logo-section, .login-page .form-card { width: 100%; border: 0; border-radius: 0; box-shadow: none; }
+.login-page .logo-section { min-height: 100%; padding: 3rem 2rem; background: linear-gradient(145deg, #fff8fa, #fff); }
+.login-page .logo-section:hover, .login-page .hover-animate:hover { transform: none; box-shadow: none; }
+.login-page .logo-container { margin-bottom: 0.7rem; }
+.login-page .logo-placeholder { width: 72px; height: 72px; border-radius: 20px; }
+.login-page .logo-text { font-size: 1.8rem; }
+.login-page .welcome-message { margin-top: 0; }
+.login-page .welcome-title { margin-bottom: 0.35rem; font-size: 1.45rem; }
+.login-page .welcome-subtitle { margin: 0; font-size: 0.88rem; line-height: 1.45; }
+.login-page .decorative-elements { opacity: 0.55; }
+.login-page .form-card { padding: 1.5rem 2rem 2rem; }
+
+/* Registration uses the same single-card surface, while preserving the
+   welcome message on the left of the form at desktop widths. */
+.register-page .auth-layout {
+  max-width: 1000px;
+  min-height: 600px;
+  gap: 0;
+  overflow: hidden;
+  border: 2px solid #f0f0f0;
+  border-radius: 2rem;
+  background: #fff;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+.register-page .auth-left, .register-page .auth-right { min-width: 0; }
+.register-page .logo-section, .register-page .form-card { width: 100%; border: 0; border-radius: 0; box-shadow: none; }
+.register-page .logo-section { min-height: 100%; padding: 3rem 2.5rem; background: linear-gradient(145deg, #fff8fa, #fff); }
+.register-page .logo-section:hover, .register-page .hover-animate:hover { transform: none; box-shadow: none; }
+.register-page .form-card { padding: 2.5rem; }
+
 /* Left Side - Logo and Message */
 .auth-left {
   flex: 1;
@@ -27,14 +72,14 @@
 
 .hover-animate:hover {
   transform: translate(8px, -8px);
-  box-shadow: 8px 8px 0 #F9C12F;
+  box-shadow: 8px 8px 0 var(--color-primary-light);
 }
 
 .logo-section {
   background: #ffffff;
   padding: 3rem 2.5rem;
   border-radius: 2rem;
-  box-shadow: 8px 8px 0 #F9C12F, 0 10px 40px rgba(0, 0, 0, 0.08);
+  box-shadow: 8px 8px 0 var(--color-primary-light), 0 10px 40px rgba(0, 0, 0, 0.08);
   border: 2px solid #f0f0f0;
   text-align: center;
   width: 100%;
@@ -66,7 +111,7 @@
 /* Enhanced hover effect for logo section */
 .logo-section:hover {
   transform: translate(4px, -4px);
-  box-shadow: 12px 12px 0 #F9C12F, 0 15px 45px rgba(0, 0, 0, 0.12);
+  box-shadow: 12px 12px 0 var(--color-primary-light), 0 15px 45px rgba(0, 0, 0, 0.12);
 }
 
 /* Logo styles */
@@ -82,7 +127,7 @@
 .logo-placeholder {
   width: 90px;
   height: 90px;
-  background: linear-gradient(135deg, #F9C12F 0%, #F15A29 80%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 80%);
   border-radius: 25px;
   display: flex;
   align-items: center;
@@ -106,7 +151,7 @@
   font-weight: 700;
   font-size: 2.2rem;
   letter-spacing: -0.5px;
-  background: linear-gradient(to right, #DA1C5C, #F15A29);
+  background: linear-gradient(to right, var(--color-primary), var(--color-primary-dark));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -171,7 +216,7 @@
 .circle-1 {
   width: 150px;
   height: 150px;
-  background: #F9C12F;
+  background: var(--color-primary-light);
   top: -50px;
   right: -50px;
 }
@@ -179,7 +224,7 @@
 .circle-2 {
   width: 100px;
   height: 100px;
-  background: #DA1C5C;
+  background: var(--color-primary);
   bottom: 30px;
   left: -30px;
 }
@@ -187,7 +232,7 @@
 .circle-3 {
   width: 80px;
   height: 80px;
-  background: #F15A29;
+  background: var(--color-primary-dark);
   bottom: -20px;
   right: 40px;
 }
@@ -335,6 +380,26 @@
   margin-bottom: 1.2rem;
 }
 
+.remember-me-group {
+  margin-top: -0.5rem;
+}
+
+.remember-me-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #6b6470;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.remember-me-label input {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
 .input-icon-wrapper {
   position: relative;
 }
@@ -352,7 +417,7 @@
 
 .input-field:focus + .input-icon,
 .input-icon-wrapper:focus-within .input-icon {
-  color: #F9C12F;
+  color: var(--color-primary);
 }
 
 .input-field {
@@ -368,14 +433,19 @@
   font-family: Tahoma, sans-serif;
 }
 
+.input-field select,
+select.input-field {
+  color: #888;
+}
+
 .input-field.with-icon {
   padding-left: 2.8rem;
 }
 
 .input-field:focus {
-  border-color: #F9C12F;
+  border-color: var(--color-primary);
   background: white;
-  box-shadow: 0 0 0 4px rgba(249, 193, 47, 0.1);
+  box-shadow: 0 0 0 4px rgba(218, 28, 92, 0.1);
 }
 
 /* Access code */
@@ -417,7 +487,7 @@
 }
 
 .toggle-password:hover {
-  color: #F9C12F;
+  color: var(--color-primary);
 }
 
 /* Submit button */
@@ -450,6 +520,12 @@
   transform: translateY(0);
 }
 
+/* Keep the password-reset call to action consistent with the login button. */
+.reset-link-btn {
+  background: linear-gradient(115deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  box-shadow: 0 8px 18px rgba(218, 28, 92, 0.25);
+}
+
 /* Divider */
 .divider {
   border: 0.5px solid #e8e8e8;
@@ -466,7 +542,7 @@
 }
 
 .toggle-mode span {
-  color: #DA1C5C;
+  color: var(--color-primary);
   font-weight: 700;
   cursor: pointer;
   margin-left: 0.3rem;
@@ -474,8 +550,72 @@
 }
 
 .toggle-mode span:hover {
-  color: #F15A29;
+  color: var(--color-primary-dark);
   text-decoration: underline;
+}
+
+.auth-secondary-link {
+  display: block;
+  margin: 0.8rem auto 1.35rem;
+  padding: 0.15rem 0.35rem;
+  border: 0;
+  background: transparent;
+  color: #8b3158;
+  font: 600 0.85rem Tahoma, sans-serif;
+  cursor: pointer;
+}
+
+.auth-secondary-link:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+.auth-simple-card {
+  width: min(100%, 460px);
+  padding: 2.5rem;
+  background: #fff;
+  border: 2px solid #f0f0f0;
+  border-radius: 2rem;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.auth-simple-card .logo-container {
+  margin-bottom: 1.5rem;
+}
+
+.auth-simple-header {
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.auth-simple-header h1 {
+  margin-bottom: 0.5rem;
+  color: #1a1a1a;
+  font: 700 1.6rem Tahoma, sans-serif;
+}
+
+.auth-simple-header p {
+  color: #666;
+  font: 0.9rem/1.5 Tahoma, sans-serif;
+}
+
+.action-btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.reset-toggle-password {
+  right: 1rem;
+}
+
+.password-strength {
+  margin: -0.75rem 0 1rem 0.35rem;
+  color: #9a5c16;
+  font: 0.78rem Tahoma, sans-serif;
+}
+
+.password-strength.strong {
+  color: #267044;
 }
 
 /* Responsive Design */
@@ -490,6 +630,26 @@
     width: 100%;
   }
 
+  /* Form first on phone screens - the decorative welcome card was pushing
+     the actual email/password fields below the fold. Purely visual (flex
+     order), markup/tab order unchanged. */
+  .auth-right {
+    order: -1;
+  }
+
+  /* In the unified login card the greeting remains first. */
+  .login-page .auth-layout { width: min(100%, 470px); min-height: 0; flex-direction: column; }
+  .login-page .auth-left, .login-page .auth-right { width: 100%; flex: none; }
+  .login-page .auth-right { order: initial; }
+
+  .register-page .auth-right { order: initial; }
+
+  .register-page .auth-layout { gap: 0; }
+
+  .register-page .logo-section { min-height: 0; padding: 1.75rem 1.5rem 1rem; }
+
+  .register-page .form-card { padding: 1.5rem; }
+
   .logo-section {
     padding: 2rem 1.5rem;
   }
@@ -498,13 +658,16 @@
     padding: 2rem 1.5rem;
   }
 
+  .login-page .logo-section { min-height: 0; padding: 1.5rem 1.5rem 1rem; }
+  .login-page .form-card { padding: 1.25rem 1.5rem 1.5rem; }
+
   .welcome-title {
     font-size: 1.5rem;
   }
 
   .hover-animate:hover {
     transform: translate(4px, -4px);
-    box-shadow: 4px 4px 0 #F9C12F;
+    box-shadow: 4px 4px 0 var(--color-primary-light);
   }
 }
 

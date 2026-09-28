@@ -1,5 +1,61 @@
 import React, { useEffect, useState } from 'react';
 import './PayBillsForm.css';
+import { API_BASE_URL } from '../../../utils/catalog';
+import { getSessionUser } from '../../../utils/session';
+import { useCustomerActivity } from '../../../context/CustomerActivityContext';
+import LocationPicker from '../Header/LocationPicker/LocationPicker';
+import { calculateDeliveryFee, findDeliveryLocation } from '../../../utils/deliveryRates';
+
+const MAX_IMAGE_DIMENSION = 1280;
+const compressImage = (file) => new Promise((resolve) => {
+  if (!file.type.startsWith('image/') || file.type === 'image/svg+xml') {
+    resolve(file);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(img.width, img.height));
+      if (scale === 1) {
+        resolve(file);
+        return;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob((blob) => {
+        resolve(blob ? new File([blob], file.name, { type: 'image/jpeg' }) : file);
+      }, 'image/jpeg', 0.8);
+    };
+    img.onerror = () => resolve(file);
+    img.src = reader.result;
+  };
+  reader.onerror = () => resolve(file);
+  reader.readAsDataURL(file);
+});
+
+const uploadDocument = async (file) => {
+  const body = new FormData();
+  body.append('document', file);
+  const response = await fetch(`${API_BASE_URL}/api/uploads/bill-documents`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
+    body
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || 'Unable to upload the payment document.');
+  // Keep the backend path relative. Persisting a device-specific localhost
+  // origin makes the receipt unavailable to admin and rider devices.
+  return data;
+};
+const embedDocument = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve({ url: reader.result, name: file.name });
+  reader.onerror = () => reject(new Error('The selected image could not be read.'));
+  reader.readAsDataURL(file);
+});
 
 const ImageUpload = ({ id, label, hint, file, onChange }) => (
   <label className={`payment-upload ${file ? 'has-file' : ''}`} htmlFor={id}>
@@ -7,7 +63,7 @@ const ImageUpload = ({ id, label, hint, file, onChange }) => (
       id={id}
       required
       type="file"
-      accept="image/*"
+      accept="image/*,application/pdf"
       onChange={(event) => onChange(event.target.files[0] || null)}
     />
     <span className="payment-upload-icon" aria-hidden="true">
@@ -31,6 +87,12 @@ const PayBillsForm = ({
   const [billReceipt, setBillReceipt] = useState(null);
   const [transferProof, setTransferProof] = useState(null);
   const [isQrExpanded, setIsQrExpanded] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [locationTouched, setLocationTouched] = useState(false);
+  const { deliveryLocation } = useCustomerActivity();
+  const customerType = getSessionUser()?.userType || 'non_student';
+  const selectedLocation = findDeliveryLocation(deliveryLocation);
+  const deliveryFee = calculateDeliveryFee(selectedLocation, customerType);
 
   useEffect(() => {
     const handleEscape = (event) => {
@@ -52,13 +114,37 @@ const PayBillsForm = ({
     };
   }, [isQrExpanded, onCancel]);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    onSubmit({
-      establishment: establishment.trim(),
-      billReceipt,
-      transferProof
-    });
+    // Same rule as OthersOrderForm: LocationPicker is a custom control, not
+    // a real form field, so the native `required` a <select> gave this for
+    // free has to be replicated by hand.
+    if (!deliveryLocation) {
+      setLocationTouched(true);
+      return;
+    }
+    setUploadError('');
+    try {
+      const [compressedBill, compressedProof] = await Promise.all([
+        compressImage(billReceipt),
+        compressImage(transferProof)
+      ]);
+      const [uploadedBill, uploadedProof] = await Promise.all([
+        uploadDocument(compressedBill).catch(() => embedDocument(compressedBill)),
+        uploadDocument(compressedProof).catch(() => embedDocument(compressedProof))
+      ]);
+      onSubmit({
+        establishment: establishment.trim(),
+        billReceipt: { name: uploadedBill.name || billReceipt.name, type: billReceipt.type },
+        transferProof: { name: uploadedProof.name || transferProof.name, type: transferProof.type },
+        billReceiptUrl: uploadedBill.url,
+        transferProofUrl: uploadedProof.url,
+        deliveryLocation,
+        customerType
+      });
+    } catch {
+      setUploadError('The documents could not be read. Choose the images again and retry.');
+    }
   };
 
   return (
@@ -105,6 +191,19 @@ const PayBillsForm = ({
                 />
               </label>
 
+              <div className="payment-field">
+                <span>Delivery location</span>
+                <LocationPicker variant="inline" />
+                {locationTouched && !deliveryLocation && (
+                  <small className="order-field-error">Please select a delivery location.</small>
+                )}
+                {selectedLocation && (
+                  <small className="order-field-service-fee">
+                    Service fee{deliveryFee.surchargeApplied ? ' (includes night surcharge)' : ''}: ₱{deliveryFee.serviceFee}
+                  </small>
+                )}
+              </div>
+
               <div className="payment-upload-section">
                 <div className="payment-upload-heading">
                   <span className="payment-step">2</span>
@@ -133,6 +232,7 @@ const PayBillsForm = ({
           </div>
 
           <div className="payment-form-actions">
+            {uploadError && <p className="payment-upload-error" role="alert">{uploadError}</p>}
             <button className="payment-cancel" type="button" onClick={onCancel}>Cancel</button>
             <button className="payment-place" type="submit">Place</button>
           </div>

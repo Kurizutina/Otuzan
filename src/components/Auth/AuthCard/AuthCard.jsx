@@ -1,7 +1,6 @@
 import React from 'react';
 
 import Logo from '../../common/Logo/Logo';
-import RoleSelector from '../RoleSelector/RoleSelector';
 import AuthForm from '../AuthForm/AuthForm';
 
 const AuthCard = ({
@@ -13,6 +12,8 @@ const AuthCard = ({
   confirmPassword,
   accessCode,
   showPassword,
+  rememberMe,
+  onRememberMeChange,
 
   message,
   roles,
@@ -21,9 +22,12 @@ const AuthCard = ({
   name,
   address,
   contactNumber,
+  userType,
 
   onRoleChange,
   onToggleMode,
+  onForgotPassword,
+  onBrowseAsGuest,
 
   onEmailChange,
   onPasswordChange,
@@ -34,6 +38,7 @@ const AuthCard = ({
   onNameChange,
   onAddressChange,
   onContactNumberChange,
+  onUserTypeChange,
 
   onTogglePassword,
   onSubmit
@@ -94,12 +99,6 @@ const AuthCard = ({
 
         <div className="hover-animate form-card">
 
-          <RoleSelector
-            selectedRole={selectedRole}
-            onRoleChange={onRoleChange}
-            roles={roles}
-          />
-
           <div className="auth-header">
 
             <h2>
@@ -108,15 +107,6 @@ const AuthCard = ({
                 : 'Create Account'}
             </h2>
 
-            <span
-              className="role-badge"
-              style={{
-                background:
-                  currentRoleObj.color
-              }}
-            >
-              {currentRoleObj.label}
-            </span>
 
           </div>
 
@@ -173,6 +163,8 @@ const AuthCard = ({
             password={password}
             confirmPassword={confirmPassword}
             accessCode={accessCode}
+            rememberMe={rememberMe}
+            onRememberMeChange={onRememberMeChange}
 
             showPassword={showPassword}
 
@@ -183,6 +175,7 @@ const AuthCard = ({
             name={name}
             address={address}
             contactNumber={contactNumber}
+            userType={userType}
 
             onEmailChange={onEmailChange}
             onPasswordChange={onPasswordChange}
@@ -203,6 +196,7 @@ const AuthCard = ({
             onContactNumberChange={
               onContactNumberChange
             }
+            onUserTypeChange={onUserTypeChange}
 
             onTogglePassword={
               onTogglePassword
@@ -213,6 +207,12 @@ const AuthCard = ({
 
 
           <hr className="divider" />
+
+          {mode === 'login' && (
+            <button type="button" className="auth-secondary-link" onClick={onForgotPassword}>
+              Forgot password?
+            </button>
+          )}
 
 
           {/* LOGIN / REGISTER TOGGLE */}
@@ -237,6 +237,12 @@ const AuthCard = ({
             )}
 
           </div>
+
+          {mode === 'login' && (
+            <button type="button" className="auth-secondary-link" onClick={onBrowseAsGuest}>
+              Browse the menu without an account
+            </button>
+          )}
 
         </div>
 

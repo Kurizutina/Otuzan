@@ -1,5 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import './OthersOrderForm.css';
+import { getSessionUser } from '../../../utils/session';
+import { useCustomerActivity } from '../../../context/CustomerActivityContext';
+import LocationPicker from '../Header/LocationPicker/LocationPicker';
+import { calculateDeliveryFee, findDeliveryLocation } from '../../../utils/deliveryRates';
 
 const serviceNames = {
   food: 'Food Delivery',
@@ -24,6 +28,11 @@ const OthersOrderForm = ({
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [recipientName, setRecipientName] = useState('');
   const [recipientContact, setRecipientContact] = useState('');
+  const { deliveryLocation } = useCustomerActivity();
+  const [locationTouched, setLocationTouched] = useState(false);
+  const customerType = getSessionUser()?.userType || 'non_student';
+  const selectedLocation = findDeliveryLocation(deliveryLocation);
+  const deliveryFee = calculateDeliveryFee(selectedLocation, customerType);
 
   useEffect(() => {
     const handleEscape = (event) => {
@@ -59,10 +68,19 @@ const OthersOrderForm = ({
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    // LocationPicker is a custom control, not a real form field, so the
+    // native `required` a <select> gave this for free has to be replicated
+    // by hand - same rule as before: every service except bills needs one.
+    if (serviceType !== 'bills' && !deliveryLocation) {
+      setLocationTouched(true);
+      return;
+    }
     const order = {
       serviceType,
       establishment: establishment.trim(),
       items,
+      deliveryLocation,
+      customerType,
       ...(serviceType === 'item' && {
         fulfillmentMethod,
         ...(fulfillmentMethod === 'pickup' && {
@@ -108,6 +126,19 @@ const OthersOrderForm = ({
               placeholder={canEditEstablishment ? 'Enter the store or vendor name' : ''}
             />
           </label>
+
+          {serviceType !== 'bills' && <div className="order-field">
+            <span>Delivery location</span>
+            <LocationPicker variant="inline" />
+            {locationTouched && !deliveryLocation && (
+              <small className="order-field-error">Please select a delivery location.</small>
+            )}
+            {selectedLocation && (
+              <small className="order-field-service-fee">
+                Service fee{deliveryFee.surchargeApplied ? ' (includes night surcharge)' : ''}: ₱{deliveryFee.serviceFee}
+              </small>
+            )}
+          </div>}
 
           {serviceType === 'item' && allowPickup && (
             <>

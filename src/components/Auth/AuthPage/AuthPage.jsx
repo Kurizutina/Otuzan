@@ -6,6 +6,8 @@ import AuthCard from '../AuthCard/AuthCard';
 import '../Auth.css';
 
 import { ROLES } from '../../../config/roles';
+import { syncCustomerOrders } from '../../../utils/customerProfileSync';
+import { getDashboardPath, setSession } from '../../../utils/session';
 
 import {
   validateAccessCode,
@@ -21,8 +23,13 @@ const AuthPage = ({ mode }) => {
   const [selectedRole, setSelectedRole] =
     useState(ROLES.CUSTOMER.key);
 
+  const REMEMBERED_EMAIL_KEY = 'otuzanRememberedEmail';
+
   const [email, setEmail] =
-    useState('');
+    useState(() => (mode === 'login' ? (localStorage.getItem(REMEMBERED_EMAIL_KEY) || '') : ''));
+
+  const [rememberMe, setRememberMe] =
+    useState(() => (mode === 'login' && Boolean(localStorage.getItem(REMEMBERED_EMAIL_KEY))));
 
   const [password, setPassword] =
     useState('');
@@ -51,12 +58,19 @@ const AuthPage = ({ mode }) => {
   const [contactNumber, setContactNumber] =
     useState('');
 
+  const [userType, setUserType] = useState('');
+
+
 
   /*
    * Reset form-specific fields
    * when mode or role changes.
    */
   useEffect(() => {
+
+    if (mode === 'register' && selectedRole === 'rider') {
+      setSelectedRole(ROLES.CUSTOMER.key);
+    }
 
     setConfirmPassword('');
     setAccessCode('');
@@ -65,6 +79,7 @@ const AuthPage = ({ mode }) => {
     setName('');
     setAddress('');
     setContactNumber('');
+    setUserType('');
 
     setMessage(null);
 
@@ -185,15 +200,17 @@ const AuthPage = ({ mode }) => {
       ? {
           email: email.trim(),
           password,
-          role: selectedRole,
+          role: selectedRole === 'rider' ? 'driver' : selectedRole,
           accessCode: accessCode.trim(),
           username: (username || name).trim(),
-          contact: contactNumber.trim()
+          address: address.trim(),
+          contact: contactNumber.trim(),
+          userType
         }
       : {
           email: email.trim(),
           password,
-          role: selectedRole
+          role: selectedRole === 'rider' ? 'driver' : selectedRole
         };
 
     try {
@@ -208,7 +225,6 @@ const AuthPage = ({ mode }) => {
         throw new Error(result.error || `${roleName} authentication failed`);
       }
 
-      sessionStorage.setItem('otuzanAuthenticated', result.token);
       const addressKey = `otuzanCustomerAddress:${result.user.email.toLowerCase()}`;
       let savedAddress = localStorage.getItem(addressKey) || '';
       if (!savedAddress) {
@@ -222,16 +238,27 @@ const AuthPage = ({ mode }) => {
         }
       }
       const customerAddress = result.user.address || (mode === 'register' ? address.trim() : savedAddress);
+      const sessionUser = result.user.role === 'customer'
+        ? { ...result.user, address: customerAddress }
+        : result.user;
+      setSession(result.token, sessionUser);
+      if (mode === 'login') {
+        if (rememberMe) localStorage.setItem(REMEMBERED_EMAIL_KEY, email.trim());
+        else localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+      }
       if (result.user.role === 'customer' && customerAddress) {
         localStorage.setItem(addressKey, customerAddress);
+        localStorage.setItem('otuzanCustomerProfile', JSON.stringify({
+          id: result.user.id,
+          username: result.user.username || result.user.name || '',
+          address: customerAddress,
+          email: result.user.email,
+          contact: result.user.contact,
+          role: result.user.role
+          , userType: result.user.userType
+        }));
       }
-      localStorage.setItem('otuzanCustomerProfile', JSON.stringify({
-        username: result.user.username || result.user.name || '',
-        address: customerAddress,
-        email: result.user.email,
-        contact: result.user.contact,
-        role: result.user.role
-      }));
+      syncCustomerOrders({ ...result.user, address: customerAddress });
 
       setMessage({
         type: 'success',
@@ -239,7 +266,7 @@ const AuthPage = ({ mode }) => {
           ? `Welcome to Otu-Zan, ${username || name}! Your ${roleName} account has been created.`
           : `Welcome back! Redirecting to your ${roleName} dashboard...`
       });
-      navigate('/home', { replace: true });
+      navigate(getDashboardPath(result.user.role), { replace: true });
     } catch (error) {
       setMessage({
         type: 'error',
@@ -250,22 +277,6 @@ const AuthPage = ({ mode }) => {
     }
 
 
-    /*
-     * Login
-     */
-    setMessage({
-      type: 'success',
-
-      text:
-        `✅ Welcome back! Redirecting to your ${roleName} dashboard...`
-    });
-
-    sessionStorage.setItem('otuzanAuthenticated', selectedRole);
-    const roleDestinations = {
-      [ROLES.RIDER.key]: '/rider/orders',
-      [ROLES.ADMIN.key]: '/admin/dashboard'
-    };
-    navigate(roleDestinations[selectedRole] || '/home');
 
   };
 
@@ -279,6 +290,8 @@ const AuthPage = ({ mode }) => {
 
       email={email}
       password={password}
+      rememberMe={rememberMe}
+      onRememberMeChange={(e) => setRememberMe(e.target.checked)}
       confirmPassword={confirmPassword}
       accessCode={accessCode}
 
@@ -292,10 +305,14 @@ const AuthPage = ({ mode }) => {
       name={name}
       address={address}
       contactNumber={contactNumber}
+      userType={userType}
 
       onRoleChange={handleRoleChange}
 
       onToggleMode={handleToggleMode}
+
+      onForgotPassword={() => navigate('/forgot-password')}
+      onBrowseAsGuest={() => navigate('/home')}
 
       onEmailChange={(e) =>
         setEmail(e.target.value)
@@ -328,6 +345,11 @@ const AuthPage = ({ mode }) => {
       onContactNumberChange={(e) =>
         setContactNumber(e.target.value)
       }
+
+      onUserTypeChange={(e) =>
+        setUserType(e.target.value)
+      }
+
 
       onTogglePassword={() =>
         setShowPassword(

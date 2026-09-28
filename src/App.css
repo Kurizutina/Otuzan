@@ -5,8 +5,9 @@
 }
 
 body {
-  font-family: Tahoma, sans-serif;
-  background: #ffffff;
+  font-family: var(--font-family-base);
+  background: var(--color-background);
+  color: var(--color-text);
   min-height: 100vh;
   margin: 0;
 }

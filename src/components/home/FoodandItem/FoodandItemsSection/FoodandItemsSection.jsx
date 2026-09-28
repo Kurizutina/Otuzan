@@ -3,23 +3,21 @@ import BrandCard from '../../BrandCard/BrandCard';
 import './FoodandItemsSection.css';
 
 const FoodandItemsSection = ({
+  id,
   title,
   brands,
+  emptyMessage,
   onBrandSelect
 }) => {
   return (
-    <section className="food-items-section">
+    <section className="food-items-section" id={id}>
 
       <div className="food-items-header">
         <h2>{title}</h2>
 
-        <button className="view-all-button">
-          View All
-        </button>
       </div>
 
       <div className="brand-list">
-
         {brands.map((brand) => (
           <BrandCard
             key={brand.id}
@@ -27,8 +25,8 @@ const FoodandItemsSection = ({
             onSelect={onBrandSelect}
           />
         ))}
-
       </div>
+      {!brands.length && emptyMessage && <p className="brand-list-empty" role="status">{emptyMessage}</p>}
 
     </section>
   );

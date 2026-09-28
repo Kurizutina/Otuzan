@@ -3,6 +3,29 @@
   flex-shrink: 0;
 }
 
+.header-guest-auth-button {
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #fff;
+  color: var(--color-primary-dark);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.header-guest-auth-button:hover { background: #ffe9ef; transform: scale(1.03); }
+.header-guest-auth-button:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+@media (max-width: 440px) {
+  .header-guest-auth-button { height: 32px; padding: 0 12px; font-size: 12px; }
+}
+
 .customer-menu-popover {
   position: absolute;
   top: calc(100% + 12px);
@@ -35,7 +58,7 @@
   flex-shrink: 0;
   border-radius: 50%;
   background: #fff0f5;
-  color: #da1c5c;
+  color: var(--color-primary);
   font-weight: 800;
 }
 
@@ -118,7 +141,7 @@
 }
 
 .profile-modal-header span {
-  color: #da1c5c;
+  color: var(--color-primary);
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -176,7 +199,7 @@
 }
 
 .profile-field > div:focus-within {
-  border-color: #da1c5c;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(218, 28, 92, 0.1);
 }
 
@@ -262,8 +285,8 @@
 }
 
 .profile-save {
-  border: 1px solid #da1c5c;
-  background: #da1c5c;
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
   color: #fff;
 }
 
