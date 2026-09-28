@@ -214,7 +214,6 @@ const useReportRefresh = () => {
 // side pagination (already implemented, just never exposed in the UI) so
 // every order is actually reachable, just a page away rather than gone.
 const HistoryTab = () => {
-  const revision = useReportRefresh();
   const [serviceFilter, setServiceFilter] = useState('all');
   // '' (all dates) is the default rather than 'today' - defaulting to today
   // would silently hide every past order the moment nothing has happened

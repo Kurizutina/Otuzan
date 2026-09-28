@@ -1,0 +1,57 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  backend:
+    name: Backend tests (Laravel)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: laravel
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, dom, fileinfo, sqlite3, pdo_sqlite
+          coverage: none
+
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Create .env and application key
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      # phpunit.xml points the suite at in-memory SQLite, so no MySQL
+      # service is needed here and nothing touches a real database.
+      - name: Run test suite
+        run: php artisan test
+
+  frontend:
+    name: Frontend tests and build (React)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --watchAll=false
+
+      # GitHub Actions sets CI=true, which makes react-scripts treat
+      # ESLint warnings as build errors - the gate that caught the
+      # unused-variable warning in DeliveryAdminDashboard.jsx.
+      - name: Production build
+        run: npm run build
