@@ -83,15 +83,29 @@ const syncOrderToBackend = (localOrderId, order, deliveryAddress, serviceFee = 0
           deliveryAddress: deliveryAddress || 'Not provided', serviceFee: Number(serviceFee) || 0
         })
     })
-      .then((response) => (response.ok ? response.json() : null))
+      .then((response) => {
+        if (!response.ok) {
+          // Never fail silently: a rejected sync means the order exists only
+          // in this browser and will never appear on admin/rider dashboards.
+          console.warn(
+            `Order ${localOrderId} was rejected by the backend (HTTP ${response.status}) - not visible to admin or riders.`
+          );
+          return null;
+        }
+        return response.json();
+      })
       .then((body) => {
         const backendOrderId = body?.order?.OrderID;
         if (backendOrderId) {
           patchStoredOrder(localOrderId, { backendOrderId });
           broadcastOrderProgressChanged();
+        } else if (body) {
+          console.warn(`Order ${localOrderId} sync returned no OrderID - backend link not recorded.`);
         }
       })
-      .catch(() => {});
+      .catch((error) => {
+        console.warn(`Order ${localOrderId} could not reach the backend:`, error);
+      });
   } catch {
     // Swallow anything unexpected - this is a background sync, never the
     // source of truth for what the customer sees.
@@ -192,9 +206,8 @@ const syncPaymentToBackend = async (order) => {
   if (!response.ok || !body.orderId || !body.payment?.PaymentID) {
     throw new Error(body.error || body.message || 'Unable to submit the bill payment. Please try again.');
   }
-  patchStoredOrder(localOrderId, { backendOrderId: body.orderId, backendPaymentId: body.payment.PaymentID });
+  patchStoredOrder(order.id, { backendOrderId: body.orderId, backendPaymentId: body.payment.PaymentID });
   broadcastOrderProgressChanged();
-  }
   return { backendOrderId: body.orderId, backendPaymentId: body.payment.PaymentID };
 };
 
@@ -460,7 +473,7 @@ export const CustomerActivityProvider = ({ children }) => {
       read: false
     };
     if (section === 'bills') {
-      return syncPaymentToBackend(order.id, details, order.serviceFee).then((ids) => {
+      return syncPaymentToBackend(order).then((ids) => {
         const savedOrder = { ...order, ...ids };
         const latest = loadActivity();
         updateAll(cart, [savedOrder, ...(latest.orders || [])], [notification, ...(latest.notifications || [])]);
@@ -468,7 +481,7 @@ export const CustomerActivityProvider = ({ children }) => {
       });
     }
     updateAll(cart, [order, ...orders], [notification, ...notifications]);
-    syncOrderToBackend(order.id, order, customer.customerAddress, order.serviceFee);
+    syncOrderToBackend(order.id, order, order.deliveryLocationName || order.customerAddress, order.serviceFee);
     return order;
   });
 

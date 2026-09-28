@@ -226,6 +226,36 @@ test('direct and cart orders retain the signed-in customer account ID', async ()
   expect(saved().orders[0]).toMatchObject({ customerId: 42, customerName: 'Full Name', serviceFee: 75, deliveryLocationName: 'Bukang Liwayway' });
 });
 
+// Regression test for the 9/28 live repro: placeOrder's backend sync passed
+// the free-text profile address instead of the picked zone, and the backend
+// zone whitelist rejects it with 422 - the failure was swallowed, so the
+// order looked placed locally but never reached admin/rider dashboards.
+test('a custom order syncs the picked delivery zone, not the free-text profile address', async () => {
+  signIn(42, 'customer');
+  localStorage.setItem('otuzanCustomerProfile', JSON.stringify({ id: 42, username: 'Full Name', address: 'Block 7 near the old market', email: 'customer@example.com' }));
+  global.fetch.mockResolvedValue({ ok: true, json: async () => ({ order: { OrderID: 123 } }) });
+  render(<CustomerActivityProvider><Observer /></CustomerActivityProvider>);
+  act(() => actions.placeOrder({ source: 'Shop', items: [{ productId: 425, quantity: 1 }], deliveryLocation: 'villa-javier', orderTime: '2026-09-15T02:00:00.000Z' }));
+  await waitFor(() => expect(global.fetch.mock.calls.some(([url, options]) => String(url).endsWith('/api/orders') && options?.method === 'POST')).toBe(true));
+  const payload = JSON.parse(global.fetch.mock.calls.find(([url, options]) => String(url).endsWith('/api/orders') && options?.method === 'POST')[1].body);
+  expect(payload.deliveryAddress).toBe('Villa Javier');
+});
+
+// A rejected sync means the order exists only in this browser - it must
+// never fail silently again.
+test('a backend-rejected order sync warns instead of disappearing silently', async () => {
+  signIn(42, 'customer');
+  const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  try {
+    global.fetch.mockResolvedValue({ ok: false, status: 422, json: async () => ({ error: 'Delivery address must be within a supported delivery location' }) });
+    render(<CustomerActivityProvider><Observer /></CustomerActivityProvider>);
+    act(() => actions.placeOrder({ source: 'Shop', items: [{ productId: 425, quantity: 1 }], deliveryLocation: 'villa-javier', orderTime: '2026-09-15T02:00:00.000Z' }));
+    await waitFor(() => expect(warn).toHaveBeenCalledWith(expect.stringContaining('rejected by the backend')));
+  } finally {
+    warn.mockRestore();
+  }
+});
+
 test('admin explicitly assigns an active delivery and only the selected rider sees it', async () => {
   localStorage.setItem('otuzanCustomerActivity', JSON.stringify({ orders: [{ ...order, status: 'out_for_delivery' }], cart: [], notifications: [] }));
   signIn(1, 'admin');
