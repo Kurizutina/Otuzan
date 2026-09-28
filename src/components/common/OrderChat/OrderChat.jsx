@@ -31,7 +31,11 @@ const OrderChat = ({ order }) => {
   const viewerId = getSessionUser()?.id;
   const viewerRole = getSessionUser()?.role;
   const hasRider = Boolean(order?.assignedRider);
-  const isClosed = ['delivered', 'cancelled'].includes(order?.status);
+  // A delivered/cancelled order's chat normally closes (backend enforces
+  // this too in MessageController::store) - but a customer's post-delivery
+  // report reopens it for both sides until an admin dismisses the report,
+  // so neither side is stuck unable to discuss what went wrong.
+  const isClosed = ['delivered', 'cancelled'].includes(order?.status) && !order?.reportedAt;
 
   useEffect(() => {
     if (!backendOrderId || !hasRider) return undefined;
