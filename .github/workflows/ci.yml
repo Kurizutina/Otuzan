@@ -4,11 +4,36 @@ on: [push, pull_request]
 
 jobs:
   backend:
-    name: Backend tests (Laravel)
+    name: Backend tests (Laravel on MySQL)
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: laravel
+    # Production runs MySQL, and sqlite-based tests silently miss MySQL-only
+    # failures (the fresh-install FK type mismatch in create_messages_table
+    # hid behind sqlite for exactly this reason) - so CI tests on MySQL too.
+    # These job-level DB_* env vars override phpunit.xml's sqlite settings,
+    # same mechanism verified locally against XAMPP.
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: otu_zan_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DB_CONNECTION: mysql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_DATABASE: otu_zan_test
+      DB_USERNAME: root
+      DB_PASSWORD: root
     steps:
       - uses: actions/checkout@v4
 
@@ -16,7 +41,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, dom, fileinfo, sqlite3, pdo_sqlite
+          extensions: mbstring, dom, fileinfo, pdo_mysql
           coverage: none
 
       - name: Install Composer dependencies
@@ -27,8 +52,6 @@ jobs:
           cp .env.example .env
           php artisan key:generate
 
-      # phpunit.xml points the suite at in-memory SQLite, so no MySQL
-      # service is needed here and nothing touches a real database.
       - name: Run test suite
         run: php artisan test
 
