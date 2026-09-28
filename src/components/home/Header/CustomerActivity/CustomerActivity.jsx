@@ -82,6 +82,58 @@ const EstimatedWait = ({ order, now }) => (
   </div>
 );
 
+// Post-delivery report window: shown to the owning customer on a delivered,
+// server-linked order for 24h after delivery (server enforces the same
+// window in OrderController::report). Reporting reopens the order chat
+// (see OrderChat) and flags the order on the admin History tab until an
+// admin dismisses it.
+const REPORT_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+const staysForReport = (order, nowMs) => order.status === 'delivered'
+  && Boolean(order.backendOrderId)
+  && (Boolean(order.reportedAt)
+    || (Number.isFinite(Date.parse(order.updatedAt)) && Date.parse(order.updatedAt) + REPORT_WINDOW_MS > nowMs));
+
+const ReportControl = ({ order, now, onReport }) => {
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  if (order.reportedAt) {
+    return (
+      <div className="order-report-state reported">
+        <i className="fa-solid fa-flag" aria-hidden="true" />
+        <div>
+          <strong>Problem reported</strong>
+          <span>The chat with your rider is open again while this is reviewed.</span>
+          {order.reportReason && <small>{order.reportReason}</small>}
+        </div>
+      </div>
+    );
+  }
+
+  if (!Number.isFinite(Date.parse(order.updatedAt)) || Date.parse(order.updatedAt) + REPORT_WINDOW_MS <= now) return null;
+
+  const submit = async () => {
+    const reason = window.prompt('What went wrong with this delivery?');
+    if (!reason || !reason.trim()) return;
+    setSubmitting(true);
+    setError('');
+    const result = await onReport(order, reason.trim().slice(0, 2000));
+    setSubmitting(false);
+    if (!result.ok) setError(result.error || 'Report could not be submitted. Please try again.');
+  };
+
+  return (
+    <div className="order-report-controls">
+      <button type="button" className="order-report-button" onClick={submit} disabled={submitting}>
+        <i className="fa-solid fa-flag" aria-hidden="true" />
+        {submitting ? 'Submitting…' : 'Report a problem'}
+      </button>
+      {error && <small className="order-report-error">{error}</small>}
+    </div>
+  );
+};
+
 const CustomerActivity = () => {
   const navigate = useNavigate();
   const {
@@ -92,14 +144,20 @@ const CustomerActivity = () => {
     updateCartQuantity,
     placeCartOrder,
     markNotificationsRead,
-    updateOrderStatus
+    updateOrderStatus,
+    reportOrder
   } = useCustomerActivity();
   const backendOrdersById = useBackendOrders('/api/orders?per_page=50');
   const allOrders = useMemo(() => applyBackendTruth(localOrders, backendOrdersById), [localOrders, backendOrdersById]);
   const [now, setNow] = useState(Date.now());
   // Completed orders stay available for the rest of the Manila business day
-  // in both customer tracking and the rider dashboard.
-  const orders = useMemo(() => allOrders.filter((order) => remainsVisibleToday(order, now)), [allOrders, now]);
+  // in both customer tracking and the rider dashboard - except a delivered
+  // order that can still be reported (24h window) or already has an open
+  // report: dropping it at midnight would hide the report button before the
+  // server-side window closes, or cut off an open report mid-review.
+  const orders = useMemo(() => allOrders.filter((order) => (
+    remainsVisibleToday(order, now) || staysForReport(order, now)
+  )), [allOrders, now]);
   const backendNotifications = useBackendNotifications();
   // Local notifications only ever cover "order request sent" (instant,
   // same-device - see placeOrder/placeCartOrder). Everything admin/rider
@@ -252,6 +310,10 @@ const CustomerActivity = () => {
                             </div>
                             <EstimatedWait order={order} now={now} />
                           </div>
+                        )}
+
+                        {order.status === 'delivered' && order.backendOrderId && getSessionUser()?.role === 'customer' && (
+                          <ReportControl order={order} now={now} onReport={reportOrder} />
                         )}
 
                         <OrderChat order={order} />

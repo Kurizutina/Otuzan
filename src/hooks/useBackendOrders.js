@@ -165,7 +165,9 @@ export const toLocalOrderShape = (backend) => {
     serviceFee: Number(backend.ServiceFee) || 0,
     ...(isBill ? { total: Number(backend.TotalPrice) || 0 } : {}),
     createdAt: toUtcIso(backend.OrderDate),
-    updatedAt: toUtcIso(backend.StatusUpdatedAt || backend.OrderDate)
+    updatedAt: toUtcIso(backend.StatusUpdatedAt || backend.OrderDate),
+    reportedAt: toUtcIso(backend.ReportedAt) || null,
+    reportReason: backend.ReportReason || null
   };
 };
 
@@ -222,7 +224,12 @@ export const applyBackendTruth = (orders, backendOrdersById) => {
       // StatusUpdatedAt is the backend's clock for rider/admin actions.
       // Keeping it on the displayed order makes the progress estimate start
       // from confirmation instead of from a stale local-storage timestamp.
-      updatedAt: toUtcIso(backend.StatusUpdatedAt || backend.OrderDate)
+      updatedAt: toUtcIso(backend.StatusUpdatedAt || backend.OrderDate),
+      // The report flag is server-authoritative in both directions: a report
+      // submitted on another device appears here, and an admin's dismissal
+      // (backend null) clears a locally-optimistic flag again.
+      reportedAt: toUtcIso(backend.ReportedAt) || null,
+      reportReason: backend.ReportReason || null
     };
   });
   const unmatched = Object.values(backendOrdersById)
