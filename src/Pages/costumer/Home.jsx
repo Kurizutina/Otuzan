@@ -298,10 +298,10 @@ const Home = () => {
           establishmentName={paymentBrand.name === 'Others' ? '' : paymentBrand.name}
           canEditEstablishment={paymentBrand.name === 'Others'}
           onCancel={() => setPaymentBrand(null)}
-          onSubmit={(payment) => {
-            placeOrder({
-              source: paymentBrand.name,
-              label: `${paymentBrand.name} bill payment`,
+          onSubmit={async (payment) => {
+            const order = await placeOrder({
+              source: payment.establishment,
+              label: `${payment.establishment} bill payment`,
               section: 'bills',
               deliveryLocation: payment.deliveryLocation,
               customerType: payment.customerType,
@@ -316,6 +316,7 @@ const Home = () => {
                 paymentStatus: 'pending'
               }
             });
+            if (!order) throw new Error('The bill payment was not submitted. Please try again.');
             setPaymentBrand(null);
           }}
         />

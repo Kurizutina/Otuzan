@@ -89,7 +89,7 @@ const ResetPassword = () => {
                 <input className="input-field with-icon" type={showPassword ? 'text' : 'password'} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Confirm new password" required minLength="6" autoComplete="new-password" />
               </div>
             </div>
-            <button className="action-btn" type="submit" disabled={isSubmitting}>
+            <button className="action-btn reset-link-btn" type="submit" disabled={isSubmitting}>
               <i className="fas fa-key" /> {isSubmitting ? 'Saving...' : 'Reset password'}
             </button>
           </form>

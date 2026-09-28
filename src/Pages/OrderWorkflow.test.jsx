@@ -4,6 +4,7 @@ import DeliveryAdminDashboard from './admin/DeliveryAdminDashboard';
 import RiderDashboard from './rider/RiderDashboard';
 import { syncCustomerOrders } from '../utils/customerProfileSync';
 import { setSession } from '../utils/session';
+import { ORDERS_CHANGED_EVENT, toLocalOrderShape } from '../hooks/useBackendOrders';
 
 jest.mock('react-router-dom', () => ({ useNavigate: () => jest.fn() }));
 
@@ -119,6 +120,64 @@ test('payment verification uses the backend payment ID carried by the admin orde
     })
   );
   expect(saved().orders[0].details.paymentStatus).toBe('verified');
+});
+
+test('failed bill submission does not leave a successful local order', async () => {
+  signIn(42, 'customer');
+  global.fetch.mockResolvedValue({ ok: false, json: async () => ({ error: 'Payment unavailable' }) });
+  render(<CustomerActivityProvider><Observer /></CustomerActivityProvider>);
+  await act(async () => {
+    await expect(actions.placeOrder({ section: 'bills', details: { establishment: 'Water' }, deliveryLocation: 'clsu-main-campus' })).rejects.toThrow('Payment unavailable');
+  });
+  expect(saved().orders).toEqual([order]);
+});
+
+test('bill submission waits for the server and saves fee, location and backend IDs', async () => {
+  signIn(42, 'customer');
+  global.fetch.mockResolvedValue({ ok: true, json: async () => ({ orderId: 90, payment: { PaymentID: 91 } }) });
+  render(<CustomerActivityProvider><Observer /></CustomerActivityProvider>);
+  await act(async () => {
+    await actions.placeOrder({ section: 'bills', details: { establishment: 'Water' }, deliveryLocation: 'clsu-main-campus', orderTime: '2026-09-14T02:00:00Z' });
+  });
+  const payload = JSON.parse(global.fetch.mock.calls.find(([url]) => url.endsWith('/api/payments'))[1].body);
+  expect(payload).toMatchObject({ serviceFee: 75, deliveryAddress: 'CLSU Main Campus' });
+  expect(saved().orders.find((entry) => entry.section === 'bills')).toMatchObject({ backendOrderId: 90, backendPaymentId: 91, serviceFee: 75 });
+});
+
+test('failed verification keeps the bill pending', async () => {
+  signIn(1, 'admin');
+  const bill = { ...order, section: 'bills', backendPaymentId: 91, details: { paymentStatus: 'pending' } };
+  localStorage.setItem('otuzanCustomerActivity', JSON.stringify({ orders: [bill], cart: [], notifications: [] }));
+  global.fetch.mockResolvedValue({ ok: false });
+  render(<CustomerActivityProvider><Observer /></CustomerActivityProvider>);
+  await act(async () => { expect(await actions.updatePaymentStatus(bill, 'verified')).toBe(false); });
+  expect(saved().orders[0].details.paymentStatus).toBe('pending');
+});
+
+test('bill history shows the server total and requests bills across all pages', async () => {
+  signIn(1, 'admin');
+  const bill = { OrderID: 90, DeliveryStatus: 'delivered', OrderDate: '2026-09-14T02:00:00Z', TotalPrice: '575.00', ServiceFee: '75.00', payments: [{ PaymentID: 91, PaymentName: 'Water', PaymentAmount: '500.00', PaymentStatus: 'verified' }], items: [] };
+  expect(toLocalOrderShape(bill)).toMatchObject({ total: 575, serviceFee: 75, details: { amount: 500 } });
+  global.fetch.mockImplementation(() => Promise.resolve({ ok: true, json: async () => ({ data: [bill], last_page: 1, total: 1, riders: [] }) }));
+  render(<CustomerActivityProvider><DeliveryAdminDashboard /></CustomerActivityProvider>);
+  fireEvent.click(screen.getByRole('button', { name: 'History' }));
+  expect(await screen.findByText('₱575.00')).toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Pay Bills' }));
+  await waitFor(() => expect(global.fetch.mock.calls.some(([url]) => url.includes('service=bills'))).toBe(true));
+});
+
+test('revenue refreshes after a bill update while the report is open', async () => {
+  signIn(1, 'admin');
+  let fee = 0;
+  global.fetch.mockImplementation((url) => Promise.resolve({ ok: true, json: async () => String(url).includes('/api/admin/revenue')
+    ? { total: fee, byService: { bills: fee }, daily: [] } : { riders: [] } }));
+  render(<CustomerActivityProvider><DeliveryAdminDashboard /></CustomerActivityProvider>);
+  fireEvent.click(screen.getByRole('button', { name: 'Revenue' }));
+  const card = await screen.findByText('Total recorded revenue');
+  expect(card.parentElement).toHaveTextContent('₱0.00');
+  fee = 75;
+  act(() => window.dispatchEvent(new Event(ORDERS_CHANGED_EVENT)));
+  await waitFor(() => expect(card.parentElement).toHaveTextContent('₱75.00'));
 });
 
 // Regression test for a real cross-user privacy leak (found live, 9/23):

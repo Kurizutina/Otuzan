@@ -73,7 +73,7 @@
 .global-cart-item-copy small { color: var(--color-primary); font-size: 9px; font-weight: 700; text-transform: uppercase; }
 .global-cart-item-copy strong { margin: 3px 0; font-size: 12px; }
 .global-cart-item-copy span { color: #85787e; font-size: 10px; }
-.global-cart-quantity { display: grid; grid-template-columns: 30px 27px 30px; align-items: center; flex-shrink: 0; overflow: hidden; border: 1px solid #e6dce0; border-radius: 9px; }
+.global-cart-quantity { display: grid; grid-template-columns: 30px 27px 30px 30px; align-items: center; flex-shrink: 0; overflow: hidden; border: 1px solid #e6dce0; border-radius: 9px; }
 .global-cart-quantity button { height: 31px; border: 0; background: #fff3f7; color: #c21751; cursor: pointer; }
 .global-cart-quantity output { text-align: center; font-size: 11px; font-weight: 700; }
 .global-cart-summary { display: flex; justify-content: space-between; margin: 20px 0 14px; padding-top: 16px; border-top: 1px solid #eee6e9; }
