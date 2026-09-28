@@ -607,7 +607,7 @@
 
 .jollibee-cart-quantity {
   display: grid;
-  grid-template-columns: 29px 26px 29px;
+  grid-template-columns: 29px 26px 29px 29px;
   align-items: center;
   flex-shrink: 0;
   overflow: hidden;

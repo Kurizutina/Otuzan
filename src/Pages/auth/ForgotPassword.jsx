@@ -25,10 +25,13 @@ const ForgotPassword = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/forgot-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: email.trim() })
       });
-      const result = await response.json();
+      const rawResult = await response.text();
+      let result = {};
+      try { result = rawResult ? JSON.parse(rawResult) : {}; }
+      catch { throw new Error('The server returned an invalid response. Please try again.'); }
       if (!response.ok) throw new Error(result.message || result.error || 'Unable to send reset link.');
       setMessage({
         type: 'success',

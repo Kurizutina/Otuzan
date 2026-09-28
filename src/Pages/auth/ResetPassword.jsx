@@ -46,10 +46,13 @@ const ResetPassword = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, token, password })
       });
-      const result = await response.json();
+      const rawResult = await response.text();
+      let result = {};
+      try { result = rawResult ? JSON.parse(rawResult) : {}; }
+      catch { throw new Error('The server returned an invalid response. Please try again.'); }
       if (!response.ok) throw new Error(result.error || 'Unable to reset password.');
       succeeded = true;
       setMessage({ type: 'success', text: result.message });
@@ -100,7 +103,7 @@ const ResetPassword = () => {
                 <input className="input-field with-icon" type={showPassword ? 'text' : 'password'} value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Confirm new password" required minLength="6" autoComplete="new-password" />
               </div>
             </div>
-            <button className="action-btn" type="submit" disabled={isSubmitting}>
+            <button className="action-btn reset-link-btn" type="submit" disabled={isSubmitting}>
               <i className="fas fa-key" /> {message?.type === 'success' ? 'Done' : isSubmitting ? 'Saving...' : 'Reset password'}
             </button>
           </form>

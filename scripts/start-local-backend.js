@@ -7,9 +7,10 @@ const root = path.resolve(__dirname, '..');
 const backend = path.join(root, 'laravel');
 const php = process.env.PHP_BINARY || (fs.existsSync('C:/xampp/php/php.exe') ? 'C:/xampp/php/php.exe' : 'php');
 const commands = { '--check': ['otuzan:db-check'], '--migrate': ['migrate'], '--test': ['test'] };
+let serverEnv = process.env;
 
 const run = (args) => {
-  const result = spawnSync(php, ['artisan', ...args], { cwd: backend, stdio: 'inherit', windowsHide: true });
+  const result = spawnSync(php, ['artisan', ...args], { cwd: backend, env: serverEnv, stdio: 'inherit', windowsHide: true });
   if (result.error) console.error(result.error.message);
   return result.status ?? 1;
 };
@@ -22,7 +23,17 @@ const run = (args) => {
   if (command) { process.exitCode = run(command); return; }
   const check = run(['otuzan:db-check']);
   if (check) throw new Error('Database unavailable. Start MySQL in XAMPP and check laravel/.env.');
-  const args = ['serve', '--host=localhost', '--port=5000', '--tries=1'];
+  // PHP parses uploads before Laravel boots. Keep its temporary files in
+  // this checkout rather than relying on writable access to XAMPP's tmp.
+  const iniDirectory = path.join(root, '.local', 'php');
+  const uploadDirectory = path.join(root, '.local', 'upload-tmp');
+  fs.mkdirSync(iniDirectory, { recursive: true });
+  fs.mkdirSync(uploadDirectory, { recursive: true });
+  fs.writeFileSync(path.join(iniDirectory, 'uploads.ini'),
+    `upload_tmp_dir="${uploadDirectory.replace(/\\/g, '/')}"\ndisplay_errors=Off\nlog_errors=On\n`);
+  serverEnv = { ...process.env, PHP_INI_SCAN_DIR: `${process.env.PHP_INI_SCAN_DIR || ''}${path.delimiter}${iniDirectory}` };
+  // Preserve PHP_INI_SCAN_DIR when Artisan spawns the actual HTTP server.
+  const args = ['serve', '--host=localhost', '--port=5000', '--tries=1', '--no-reload'];
   if (process.argv.includes('--foreground')) { process.exitCode = run(args); return; }
   const health = async () => {
     const response = await fetch('http://localhost:5000/api/health/db', { signal: AbortSignal.timeout(2000) });
@@ -39,7 +50,7 @@ const run = (args) => {
     const log = fs.openSync(path.join(local, 'laravel.log'), 'a');
     try {
       const child = spawn(php, ['artisan', ...args], {
-        cwd: backend, detached: true, windowsHide: true, stdio: ['ignore', log, log]
+        cwd: backend, env: serverEnv, detached: true, windowsHide: true, stdio: ['ignore', log, log]
       });
       await new Promise((resolve, reject) => { child.once('spawn', resolve); child.once('error', reject); });
       child.unref();

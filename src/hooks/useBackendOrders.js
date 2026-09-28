@@ -146,6 +146,9 @@ export const toLocalOrderShape = (backend) => {
     details: isBill ? {
       establishment: source,
       paymentStatus: payment.PaymentStatus,
+      amount: Number(payment.PaymentAmount) || 0,
+      billReceiptType: paymentNote.billReceiptType || null,
+      transferProofType: paymentNote.transferProofType || null,
       billReceiptUrl: paymentNote.billReceiptUrl || null,
       billReceiptName: paymentNote.billReceiptName || null,
       transferProofUrl: paymentNote.transferProofUrl || null,
@@ -160,6 +163,7 @@ export const toLocalOrderShape = (backend) => {
     assignedRider: backend.rider ? { id: backend.rider.UserID, name: backend.rider.UserName } : null,
     queuePosition: backend.queuePosition ?? null,
     serviceFee: Number(backend.ServiceFee) || 0,
+    ...(isBill ? { total: Number(backend.TotalPrice) || 0 } : {}),
     createdAt: toUtcIso(backend.OrderDate),
     updatedAt: toUtcIso(backend.StatusUpdatedAt || backend.OrderDate)
   };
@@ -213,6 +217,7 @@ export const applyBackendTruth = (orders, backendOrdersById) => {
       status: backend.DeliveryStatus,
       assignedRider: backend.rider ? { id: backend.rider.UserID, name: backend.rider.UserName } : null,
       details: payment ? { ...order.details, paymentStatus: payment.PaymentStatus } : order.details,
+      ...(payment ? { serviceFee: Number(backend.ServiceFee) || 0, total: Number(backend.TotalPrice) || 0 } : {}),
       queuePosition: backend.queuePosition ?? null,
       // StatusUpdatedAt is the backend's clock for rider/admin actions.
       // Keeping it on the displayed order makes the progress estimate start

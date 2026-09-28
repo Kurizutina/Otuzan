@@ -268,7 +268,7 @@ const CustomerActivity = () => {
                       {cart.map((item) => (
                         <article className="global-cart-item" key={item.cartId}>
                           <div className="global-cart-item-copy"><small>{item.source}</small><strong>{item.name}</strong>{item.selectedOption && <span>{item.selectedOption}</span>}{item.price ? <span>{formatPrice(item.price * item.quantity)}</span> : <span>Price to be confirmed</span>}</div>
-                          <div className="global-cart-quantity"><button type="button" onClick={() => updateCartQuantity(item.cartId, -1)}>−</button><output>{item.quantity}</output><button type="button" onClick={() => updateCartQuantity(item.cartId, 1)}>＋</button></div>
+                          <div className="global-cart-quantity"><button type="button" onClick={() => updateCartQuantity(item.cartId, -1)}>−</button><output>{item.quantity}</output><button type="button" onClick={() => updateCartQuantity(item.cartId, 1)}>＋</button><button type="button" onClick={() => updateCartQuantity(item.cartId, -item.quantity)} aria-label={`Remove ${item.name} from cart`}><i className="fa-solid fa-trash" aria-hidden="true" /></button></div>
                         </article>
                       ))}
                     </div>

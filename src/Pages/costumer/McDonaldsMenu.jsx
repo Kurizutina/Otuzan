@@ -105,15 +105,14 @@ const RestaurantProductCard = ({ product, onAddToCart, showFoodIcons }) => {
 };
 
 const similarBrandCards = [
-  { name: 'Jollibee', image: '/images/jollibee_logo.jpg' },
-  { name: "McDonald's", image: "/images/mcdonald's_logo.png" },
-  { name: 'Mang Inasal', image: '/images/mang_inasal_logo.png' },
-  { name: "Manuela's", image: '/images/maluelas_logo.jpg' }
+  { name: 'Jollibee', image: '/images/jollibee_logo.jpg', route: '/food/jollibee' },
+  { name: "McDonald's", image: "/images/mcdonald's_logo.png", route: '/food/mcdonalds' },
+  { name: 'Mang Inasal', image: '/images/mang_inasal_logo.png', route: '/food/mang-inasal' },
+  { name: "Manuela's", image: '/images/maluelas_logo.jpg', route: '/food/manuelas' }
 ];
 
-// Intentionally presentational: these cards introduce the discovery pattern
-// without adding routes, click handlers, or changing the existing menu flow.
 const SimilarBrands = ({ sourceKey }) => {
+  const navigate = useNavigate();
   const brands = similarBrandCards.filter((brand) => brand.name !== sourceKey).slice(0, 3);
   if (!brands.length) return null;
 
@@ -128,11 +127,11 @@ const SimilarBrands = ({ sourceKey }) => {
       </div>
       <div className="similar-brands-grid">
         {brands.map((brand) => (
-          <article className="similar-brand-card" key={brand.name}>
+          <button type="button" className="similar-brand-card" key={brand.name} onClick={() => navigate(brand.route)} style={{ textAlign: 'left', fontFamily: 'inherit', cursor: 'pointer' }}>
             <img src={brand.image} alt="" />
             <strong>{brand.name}</strong>
             <span>Food delivery</span>
-          </article>
+          </button>
         ))}
       </div>
     </section>
@@ -537,6 +536,7 @@ export const RestaurantMenu = ({
                     <button type="button" onClick={() => updateQuantity(item.id, -1)} aria-label={`Decrease ${item.name} quantity`}>−</button>
                     <output>{item.quantity}</output>
                     <button type="button" onClick={() => updateQuantity(item.id, 1)} aria-label={`Increase ${item.name} quantity`}>＋</button>
+                    <button type="button" onClick={() => updateCartQuantity(item.cartId, -item.quantity)} aria-label={`Remove ${item.name} from cart`}><i className="fa-solid fa-trash" aria-hidden="true" /></button>
                   </div>
                 </div>
               ))}

@@ -166,39 +166,36 @@ const syncAssignmentToBackend = (backendOrderId, riderId) => {
     .catch(() => {});
 };
 
-// Same best-effort philosophy as syncOrderToBackend, but for Pay Bills -
-// those orders have no catalog items so they go through POST /api/payments
-// instead of POST /api/orders. On success, patches both the backend
-// OrderID (so status/assignment sync/override still work like any other
-// order) and the PaymentID (so payment verify/reject can be synced too)
-// onto the local order.
-const syncPaymentToBackend = (localOrderId, details, serviceFee = 0) => {
-  try {
-    const headers = authHeaders();
-    if (!headers || getSessionUser()?.role !== 'customer' || !details) return;
-    fetch(`${API_BASE_URL}/api/payments`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        establishment: details.establishment || '',
-        billReceiptUrl: details.billReceiptUrl || null,
-        billReceiptName: details.billReceiptName || null,
-        transferProofUrl: details.transferProofUrl || null,
-        transferProofName: details.transferProofName || null,
-        serviceFee: Number(serviceFee) || 0
-      })
+// A bill is placed only after the API confirms it, so admin reports and
+// customer tracking always refer to a persisted payment.
+const syncPaymentToBackend = async (order) => {
+  const { details, serviceFee } = order;
+  const headers = authHeaders();
+  if (!headers || getSessionUser()?.role !== 'customer' || !details) throw new Error('Please sign in to submit a bill payment.');
+  const response = await fetch(`${API_BASE_URL}/api/payments`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      establishment: details.establishment || '',
+      billReceiptUrl: details.billReceiptUrl || null,
+      billReceiptName: details.billReceiptName || null,
+      transferProofUrl: details.transferProofUrl || null,
+      transferProofName: details.transferProofName || null,
+      billReceiptType: details.billReceiptType || null,
+      transferProofType: details.transferProofType || null,
+      deliveryAddress: order.deliveryLocationName || order.customerAddress || null,
+      clientOrderId: order.id,
+      serviceFee: Number(serviceFee) || 0
     })
-      .then((response) => (response.ok ? response.json() : null))
-      .then((body) => {
-        if (body?.orderId) {
-          patchStoredOrder(localOrderId, { backendOrderId: body.orderId, backendPaymentId: body.payment?.PaymentID });
-          broadcastOrderProgressChanged();
-        }
-      })
-      .catch(() => {});
-  } catch {
-    // Same as syncOrderToBackend - never the source of truth, safe to swallow.
+  });
+  const body = await response.json();
+  if (!response.ok || !body.orderId || !body.payment?.PaymentID) {
+    throw new Error(body.error || body.message || 'Unable to submit the bill payment. Please try again.');
   }
+  patchStoredOrder(localOrderId, { backendOrderId: body.orderId, backendPaymentId: body.payment.PaymentID });
+  broadcastOrderProgressChanged();
+  }
+  return { backendOrderId: body.orderId, backendPaymentId: body.payment.PaymentID };
 };
 
 const syncPaymentStatusToBackend = (backendPaymentId, status) => {
@@ -462,12 +459,16 @@ export const CustomerActivityProvider = ({ children }) => {
       createdAt,
       read: false
     };
-    updateAll(cart, [order, ...orders], [notification, ...notifications]);
     if (section === 'bills') {
-      syncPaymentToBackend(order.id, details, order.serviceFee);
-    } else {
-      syncOrderToBackend(order.id, order, order.deliveryLocationName, order.serviceFee);
+      return syncPaymentToBackend(order.id, details, order.serviceFee).then((ids) => {
+        const savedOrder = { ...order, ...ids };
+        const latest = loadActivity();
+        updateAll(cart, [savedOrder, ...(latest.orders || [])], [notification, ...(latest.notifications || [])]);
+        return savedOrder;
+      });
     }
+    updateAll(cart, [order, ...orders], [notification, ...notifications]);
+    syncOrderToBackend(order.id, order, customer.customerAddress, order.serviceFee);
     return order;
   });
 
@@ -648,7 +649,7 @@ export const CustomerActivityProvider = ({ children }) => {
     syncAssignmentToBackend(currentOrder?.backendOrderId, rider?.id);
   };
 
-  const updatePaymentStatus = (orderRef, paymentStatus) => {
+  const updatePaymentStatus = async (orderRef, paymentStatus) => {
     if (getSessionUser()?.role !== 'admin' || !['verified', 'rejected'].includes(paymentStatus)) return;
     const orderId = orderRef?.id ?? orderRef;
     const latest = loadActivity();
@@ -662,23 +663,14 @@ export const CustomerActivityProvider = ({ children }) => {
       return syncPaymentStatusToBackend(backendPaymentId, paymentStatus);
     }
     if (currentOrder.section !== 'bills') return Promise.resolve(false);
+    const backendPaymentId = currentOrder.backendPaymentId || orderRef?.backendPaymentId;
+    if (!backendPaymentId || !await syncPaymentStatusToBackend(backendPaymentId, paymentStatus)) return false;
     const nextOrders = (latest.orders || orders).map((order) => order.id === orderId
       ? { ...order, details: { ...order.details, paymentStatus }, updatedAt: new Date().toISOString() }
       : order);
-    // Same reasoning as updateOrderStatus above - a backend-linked payment
-    // gets its notification from PaymentController::updateStatus instead.
-    const nextNotifications = currentOrder.backendPaymentId
-      ? (latest.notifications || notifications)
-      : [{ id: `NOT-${Date.now()}-${Math.random()}`, orderId, title: `Payment ${paymentStatus}`, message: `Your payment for ${currentOrder.source} was ${paymentStatus}.`, createdAt: new Date().toISOString(), read: false, type: paymentStatus === 'rejected' ? 'cancelled' : 'status' }, ...(latest.notifications || notifications)];
-    updateAll(latest.cart || cart, nextOrders, nextNotifications);
-    // An admin may be looking at this order from the shared local cache,
-    // while the passed dashboard order carries the PaymentID supplied by
-    // the backend. Prefer the stored ID, but retain that authoritative
-    // fallback so Verify/Reject always reaches the payment endpoint.
-    const backendPaymentId = currentOrder.backendPaymentId || orderRef?.backendPaymentId;
-    return backendPaymentId
-      ? syncPaymentStatusToBackend(backendPaymentId, paymentStatus)
-      : Promise.resolve(true);
+    // The server creates the customer notification after confirming payment status.
+    updateAll(latest.cart || cart, nextOrders, latest.notifications || notifications);
+    return true;
   };
 
   const value = useMemo(() => ({

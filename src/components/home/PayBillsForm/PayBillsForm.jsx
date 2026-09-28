@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import './PayBillsForm.css';
 import { API_BASE_URL } from '../../../utils/catalog';
 import { getSessionUser } from '../../../utils/session';
@@ -37,25 +37,22 @@ const compressImage = (file) => new Promise((resolve) => {
 });
 
 const uploadDocument = async (file) => {
+  if (file.size > 10 * 1024 * 1024) throw new Error('Each bill document must be 10 MB or smaller.');
   const body = new FormData();
   body.append('document', file);
   const response = await fetch(`${API_BASE_URL}/api/uploads/bill-documents`, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
+    headers: { Accept: 'application/json', Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
     body
   });
-  const data = await response.json();
+  let data;
+  try { data = await response.json(); }
+  catch { throw new Error('The upload server returned an invalid response. Please try again.'); }
   if (!response.ok) throw new Error(data.error || 'Unable to upload the payment document.');
   // Keep the backend path relative. Persisting a device-specific localhost
   // origin makes the receipt unavailable to admin and rider devices.
   return data;
 };
-const embedDocument = (file) => new Promise((resolve, reject) => {
-  const reader = new FileReader();
-  reader.onload = () => resolve({ url: reader.result, name: file.name });
-  reader.onerror = () => reject(new Error('The selected image could not be read.'));
-  reader.readAsDataURL(file);
-});
 
 const ImageUpload = ({ id, label, hint, file, onChange }) => (
   <label className={`payment-upload ${file ? 'has-file' : ''}`} htmlFor={id}>
@@ -88,6 +85,8 @@ const PayBillsForm = ({
   const [transferProof, setTransferProof] = useState(null);
   const [isQrExpanded, setIsQrExpanded] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitting = useRef(false);
   const [locationTouched, setLocationTouched] = useState(false);
   const { deliveryLocation } = useCustomerActivity();
   const customerType = getSessionUser()?.userType || 'non_student';
@@ -116,6 +115,7 @@ const PayBillsForm = ({
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (submitting.current) return;
     // Same rule as OthersOrderForm: LocationPicker is a custom control, not
     // a real form field, so the native `required` a <select> gave this for
     // free has to be replicated by hand.
@@ -124,16 +124,18 @@ const PayBillsForm = ({
       return;
     }
     setUploadError('');
+    submitting.current = true;
+    setIsSubmitting(true);
     try {
       const [compressedBill, compressedProof] = await Promise.all([
         compressImage(billReceipt),
         compressImage(transferProof)
       ]);
       const [uploadedBill, uploadedProof] = await Promise.all([
-        uploadDocument(compressedBill).catch(() => embedDocument(compressedBill)),
-        uploadDocument(compressedProof).catch(() => embedDocument(compressedProof))
+        uploadDocument(compressedBill),
+        uploadDocument(compressedProof)
       ]);
-      onSubmit({
+      await onSubmit({
         establishment: establishment.trim(),
         billReceipt: { name: uploadedBill.name || billReceipt.name, type: billReceipt.type },
         transferProof: { name: uploadedProof.name || transferProof.name, type: transferProof.type },
@@ -142,8 +144,11 @@ const PayBillsForm = ({
         deliveryLocation,
         customerType
       });
-    } catch {
-      setUploadError('The documents could not be read. Choose the images again and retry.');
+    } catch (error) {
+      setUploadError(error.message || 'Unable to submit the bill payment. Please try again.');
+    } finally {
+      submitting.current = false;
+      setIsSubmitting(false);
     }
   };
 
@@ -234,7 +239,7 @@ const PayBillsForm = ({
           <div className="payment-form-actions">
             {uploadError && <p className="payment-upload-error" role="alert">{uploadError}</p>}
             <button className="payment-cancel" type="button" onClick={onCancel}>Cancel</button>
-            <button className="payment-place" type="submit">Place</button>
+            <button className="payment-place" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Submitting...' : 'Place'}</button>
           </div>
         </form>
       </section>

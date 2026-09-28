@@ -52,7 +52,9 @@ const inferService = (order) => {
   return order.details?.serviceType === 'item' ? 'item' : 'food';
 };
 
-const getOrderTotal = (order) => (order.items || []).reduce(
+const getOrderTotal = (order) => inferService(order) === 'bills'
+  ? (order.total ?? ((Number(order.details?.amount) || 0) + (Number(order.serviceFee) || 0)))
+  : (order.items || []).reduce(
   (total, item) => total + ((Number(item.price) || 0) * (Number(item.quantity) || 1)),
   0
 );
@@ -185,6 +187,23 @@ const DateFilter = ({ value, onChange, today }) => (
 
 const HISTORY_PAGE_SIZE = 20;
 
+// Payments can be completed from another device while a report is open.
+const useReportRefresh = () => {
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    const refresh = () => { if (document.visibilityState !== 'hidden') setRevision((value) => value + 1); };
+    const timer = window.setInterval(refresh, 5000);
+    window.addEventListener(ORDERS_CHANGED_EVENT, refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener(ORDERS_CHANGED_EVENT, refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
+  }, []);
+  return revision;
+};
+
 // History used to read from the same 50-order-capped fetch Live Orders and
 // Payments use (useBackendOrders + applyBackendTruth), which is fine for
 // those - a bounded "what's active right now" working set - but wrong for
@@ -195,6 +214,7 @@ const HISTORY_PAGE_SIZE = 20;
 // side pagination (already implemented, just never exposed in the UI) so
 // every order is actually reachable, just a page away rather than gone.
 const HistoryTab = () => {
+  const revision = useReportRefresh();
   const [serviceFilter, setServiceFilter] = useState('all');
   // '' (all dates) is the default rather than 'today' - defaulting to today
   // would silently hide every past order the moment nothing has happened
@@ -212,7 +232,7 @@ const HistoryTab = () => {
 
   const [refreshCount, setRefreshCount] = useState(0);
 
-  useEffect(() => { setPage(1); }, [dateFilter]);
+  useEffect(() => { setPage(1); }, [dateFilter, serviceFilter]);
 
   useEffect(() => {
     const handleOrdersChanged = () => setRefreshCount((c) => c + 1);
@@ -229,16 +249,17 @@ const HistoryTab = () => {
     const controller = new AbortController();
     const api = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     const params = new URLSearchParams({ status: 'delivered,cancelled', per_page: String(HISTORY_PAGE_SIZE), page: String(page) });
+    if (serviceFilter === 'bills') params.set('service', 'bills');
     if (dateFilter) params.set('date', dateFilter);
     fetch(`${api}/api/admin/orders?${params}`, {
       headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
       signal: controller.signal
     })
       .then((response) => (response.ok ? response.json() : Promise.reject()))
-      .then(setResult)
+      .then((body) => { setResult(body); setError(''); })
       .catch(() => { if (!controller.signal.aborted) setError('Unable to load history right now. Try again shortly.'); });
     return () => controller.abort();
-  }, [page, dateFilter, refreshCount]);
+  }, [page, dateFilter, serviceFilter, refreshCount]);
 
   if (error) return <section><div className="admin-table-empty">{error}</div></section>;
   if (!result) return <section><div className="admin-table-empty">Loading history…</div></section>;
@@ -266,6 +287,7 @@ const HistoryTab = () => {
 // (OrderController::revenue) that aggregates over every non-cancelled order
 // in the table, not just the ones currently in view.
 const RevenueTab = () => {
+  const revision = useReportRefresh();
   // '' (all dates) is the default - matches the pre-existing "all-time
   // total" behavior exactly, an exact date narrows the stat cards below to
   // just that day via OrderController::revenue's `date` param. The `daily`
@@ -284,10 +306,10 @@ const RevenueTab = () => {
       signal: controller.signal
     })
       .then((response) => (response.ok ? response.json() : Promise.reject()))
-      .then(setData)
+      .then((body) => { setData(body); setError(''); })
       .catch(() => { if (!controller.signal.aborted) setError('Unable to load revenue right now. Try again shortly.'); });
     return () => controller.abort();
-  }, [dateFilter]);
+  }, [dateFilter, revision]);
 
   if (error) return <section><div className="admin-table-empty">{error}</div></section>;
   if (!data) return <section><div className="admin-table-empty">Loading revenue…</div></section>;
@@ -537,6 +559,31 @@ const RevenueBarGraph = ({ daily }) => {
 
 const PaymentsTab = ({ orders, onPaymentStatus }) => {
   const [zoomedImage, setZoomedImage] = useState(null);
+  const [paymentError, setPaymentError] = useState('');
+  const [savingPayment, setSavingPayment] = useState(null);
+  const savingRef = useRef(false);
+  const savePayment = async (order, status) => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    setSavingPayment(order.id);
+    setPaymentError('');
+    try {
+      if (!await onPaymentStatus(order, status)) throw new Error('Unable to update the payment. Please try again.');
+    } catch (error) {
+      setPaymentError(error.message || 'Unable to update the payment. Please try again.');
+    } finally {
+      savingRef.current = false;
+      setSavingPayment(null);
+    }
+  };
+  const documentButton = (url, name, type, label) => {
+    if (!url) return null;
+    const assetUrl = apiAssetUrl(url);
+    if (type === 'application/pdf' || /\.pdf(?:[?#]|$)/i.test(url) || /\.pdf$/i.test(name || '')) {
+      return <a className="admin-payment-thumb" href={assetUrl} target="_blank" rel="noreferrer">View {label} (PDF)</a>;
+    }
+    return <button type="button" className="admin-payment-thumb" onClick={() => setZoomedImage({ url: assetUrl, alt: label })}><img src={assetUrl} alt={label} /><span>View {label}</span></button>;
+  };
   useEffect(() => {
     if (!zoomedImage) return undefined;
     const closeOnEscape = (event) => { if (event.key === 'Escape') setZoomedImage(null); };
@@ -545,11 +592,12 @@ const PaymentsTab = ({ orders, onPaymentStatus }) => {
   }, [zoomedImage]);
   const payments = orders.filter((order) => inferService(order) === 'bills');
   return <>
+    {paymentError && <p role="alert">{paymentError}</p>}
     <div className="admin-payment-list">{payments.map((order) => <article className="admin-payment-card" key={order.id}>
       <div><small>{order.id}</small><OrderCustomerDetails order={order} /><span>{order.source}</span></div>
-      <div><small>Uploaded bill</small><strong>{order.details?.billReceiptName || 'No receipt uploaded'}</strong><span>{order.details?.transferProofName || 'No transfer proof'}</span><div className="admin-payment-documents">{order.details?.billReceiptUrl && <button type="button" className="admin-payment-thumb" onClick={() => setZoomedImage({ url: apiAssetUrl(order.details.billReceiptUrl), alt: 'Uploaded bill receipt' })}><img src={apiAssetUrl(order.details.billReceiptUrl)} alt="Uploaded bill receipt" /><span>View receipt</span></button>}{order.details?.transferProofUrl && <button type="button" className="admin-payment-thumb" onClick={() => setZoomedImage({ url: apiAssetUrl(order.details.transferProofUrl), alt: 'Uploaded proof of payment' })}><img src={apiAssetUrl(order.details.transferProofUrl)} alt="Uploaded proof of payment" /><span>View proof</span></button>}</div></div>
+      <div><small>Uploaded bill</small><strong>{order.details?.billReceiptName || 'No receipt uploaded'}</strong><span>{order.details?.transferProofName || 'No transfer proof'}</span><div className="admin-payment-documents">{documentButton(order.details?.billReceiptUrl, order.details?.billReceiptName, order.details?.billReceiptType, 'receipt')}{documentButton(order.details?.transferProofUrl, order.details?.transferProofName, order.details?.transferProofType, 'proof of payment')}</div></div>
       <span className={`admin-payment-status ${order.details?.paymentStatus || 'pending'}`}>{order.details?.paymentStatus || 'pending'}</span>
-      {(order.details?.paymentStatus || 'pending') === 'pending' && <div className="admin-payment-actions"><button className="primary" type="button" onClick={() => onPaymentStatus(order, 'verified')}>Verify</button><button type="button" onClick={() => onPaymentStatus(order, 'rejected')}>Reject</button></div>}
+      {(order.details?.paymentStatus || 'pending') === 'pending' && <div className="admin-payment-actions"><button className="primary" type="button" disabled={savingPayment !== null} onClick={() => savePayment(order, 'verified')}>Verify</button><button type="button" disabled={savingPayment !== null} onClick={() => savePayment(order, 'rejected')}>Reject</button></div>}
     </article>)}{!payments.length && <div className="admin-page-empty"><i className="fa-solid fa-file-invoice" /><h2>No payment requests</h2><p>Customer bill-payment submissions will appear here.</p></div>}</div>
 
     {zoomedImage && (
@@ -589,8 +637,18 @@ const CatalogTab = () => {
   const [productImageFile, setProductImageFile] = useState(null);
   const request = useCallback(async (path, options = {}) => {
     const isFormData = options.body instanceof FormData;
-    const response = await fetch(`${api}/api/admin/catalog/${path}`, { ...options, headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}`, ...(isFormData ? {} : { 'Content-Type': 'application/json' }), ...(options.headers || {}) } });
-    const body = await response.json();
+    const response = await fetch(`${api}/api/admin/catalog/${path}`, { ...options, headers: { Accept: 'application/json', Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}`, ...(isFormData ? {} : { 'Content-Type': 'application/json' }), ...(options.headers || {}) } });
+    const rawBody = await response.text();
+    let body = {};
+    try { body = rawBody ? JSON.parse(rawBody) : {}; }
+    catch {
+      // The catalog write has already completed when the server sends a
+      // successful status. Some local PHP configurations can append a
+      // warning to an otherwise-valid response (for example while handling
+      // an image), so keep the completed save and reload the canonical data.
+      // Non-success responses still remain real failures below.
+      if (!response.ok) throw new Error('Unable to save catalog changes. Please try again.');
+    }
     if (!response.ok) throw new Error(body.error || Object.values(body.errors || {}).flat()[0] || 'Unable to save catalog changes.');
     return body;
   }, [api]);
