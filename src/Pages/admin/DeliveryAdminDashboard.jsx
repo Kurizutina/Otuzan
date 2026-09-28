@@ -576,8 +576,18 @@ const CatalogTab = () => {
   const [productImageFile, setProductImageFile] = useState(null);
   const request = useCallback(async (path, options = {}) => {
     const isFormData = options.body instanceof FormData;
-    const response = await fetch(`${api}/api/admin/catalog/${path}`, { ...options, headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}`, ...(isFormData ? {} : { 'Content-Type': 'application/json' }), ...(options.headers || {}) } });
-    const body = await response.json();
+    const response = await fetch(`${api}/api/admin/catalog/${path}`, { ...options, headers: { Accept: 'application/json', Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}`, ...(isFormData ? {} : { 'Content-Type': 'application/json' }), ...(options.headers || {}) } });
+    const rawBody = await response.text();
+    let body = {};
+    try { body = rawBody ? JSON.parse(rawBody) : {}; }
+    catch {
+      // The catalog write has already completed when the server sends a
+      // successful status. Some local PHP configurations can append a
+      // warning to an otherwise-valid response (for example while handling
+      // an image), so keep the completed save and reload the canonical data.
+      // Non-success responses still remain real failures below.
+      if (!response.ok) throw new Error('Unable to save catalog changes. Please try again.');
+    }
     if (!response.ok) throw new Error(body.error || Object.values(body.errors || {}).flat()[0] || 'Unable to save catalog changes.');
     return body;
   }, [api]);

@@ -38,10 +38,13 @@ const ResetPassword = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/reset-password`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, token, password })
       });
-      const result = await response.json();
+      const rawResult = await response.text();
+      let result = {};
+      try { result = rawResult ? JSON.parse(rawResult) : {}; }
+      catch { throw new Error('The server returned an invalid response. Please try again.'); }
       if (!response.ok) throw new Error(result.error || 'Unable to reset password.');
       setMessage({ type: 'success', text: result.message });
       window.setTimeout(() => navigate('/login'), 1200);
