@@ -23,15 +23,37 @@ The launcher uses XAMPP PHP at `C:/xampp/php/php.exe`, or PHP on PATH. Override 
 Requires Node.js, PHP 8.2+, Composer, and MySQL/MariaDB (XAMPP includes PHP, MariaDB and phpMyAdmin).
 
 1. Run `npm install` in the project root.
-2. Start XAMPP Apache and MySQL. Import `backend/database/schema.sql` through phpMyAdmin to create the seven application tables.
-3. Run `composer install` inside `laravel`.
+2. Start XAMPP Apache and MySQL.
+3. Run `composer install` inside `laravel` - required on every fresh clone, `laravel/vendor` is not tracked by git.
 4. Copy `laravel/.env.example` to `laravel/.env` and set database credentials, frontend origin and staff registration codes.
-5. Inside `laravel`, run `php artisan key:generate` and `php artisan migrate`.
+5. Inside `laravel`, run `php artisan key:generate`, `php artisan migrate`, then `php artisan db:seed` to load the initial catalog.
 6. Copy root `.env.example` to `.env`, then start the backend and frontend as above.
 
 For real Forgot Password emails, configure the `MAIL_*` values in `laravel/.env` for your SMTP provider. The default `MAIL_MAILER=log` keeps local development safe by writing reset links to `laravel/storage/logs/laravel.log`; never commit `laravel/.env` or SMTP credentials.
 
 Laravel migrations adopt existing Users records and add the address and API-token storage. Existing bcrypt passwords and account IDs are preserved. Staff accounts use backend roles `driver` and `admin`; local default access codes are `DRIVER2024` and `ADMIN2024`.
+
+## Deploying to a host
+
+Frontend and backend deploy separately: static hosting (e.g. Vercel) serves the React build, while the Laravel API needs a host that runs a persistent PHP process with a MySQL service (e.g. Render or Railway).
+
+Backend environment, set on the host - never committed:
+
+- `APP_ENV=production` and `APP_DEBUG=false`: debug mode returns full stack traces with real server paths to anyone who trips an error.
+- `APP_URL`: the backend's own public URL (`https://...`).
+- `FRONTEND_URL`: the deployed frontend origin, exactly (scheme + host, no trailing slash). CORS allows this origin and rejects every other; comma-separate if two origins are ever needed.
+- `DB_*` and `MAIL_*`: the host's MySQL and SMTP credentials.
+- Run `php artisan key:generate` once per environment and `php artisan migrate --force` on each release.
+
+First admin account: public signup always creates customers, so bootstrap the first admin on the server with:
+
+    php artisan otuzan:make-admin "admin@example.com" "Admin Name"
+
+It prompts for a password (`--password=` to pass one explicitly, `--user-type=student` if needed). That admin can then create rider and customer accounts through the admin UI.
+
+Frontend build: set `REACT_APP_API_URL` to the backend's public URL in the host's build environment variables. It is baked into the bundle at `npm run build` time, so rebuilding is required after any change.
+
+After pulling backend changes that include seeders, run `php artisan db:seed` inside `laravel` to add new catalog entries (e.g. `JollibeeProductsSeeder`) to your local database - pulling code does not update anyone else's database.
 
 ## Backend and verification
 
