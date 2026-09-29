@@ -9,9 +9,10 @@ const path = require('path');
 const { spawn } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
+const frontend = path.join(root, 'frontend');
 const node = process.execPath;
 const backendLauncher = path.join(root, 'scripts', 'start-local-backend.js');
-const reactStart = path.join(root, 'node_modules', 'react-scripts', 'scripts', 'start.js');
+const reactStart = path.join(frontend, 'node_modules', 'react-scripts', 'scripts', 'start.js');
 
 const run = (command, args) => new Promise((resolve, reject) => {
   const child = spawn(command, args, { cwd: root, stdio: 'inherit', windowsHide: true });
@@ -22,7 +23,7 @@ const run = (command, args) => new Promise((resolve, reject) => {
 });
 
 const startFrontend = () => {
-  const child = spawn(node, [reactStart], { cwd: root, stdio: 'inherit', windowsHide: true });
+  const child = spawn(node, [reactStart], { cwd: frontend, stdio: 'inherit', windowsHide: true });
   child.once('error', (error) => {
     console.error(`Unable to start the frontend: ${error.message}`);
     process.exitCode = 1;

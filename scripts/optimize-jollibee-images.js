@@ -6,7 +6,7 @@ const sharp = require('sharp');
 // the real ImagePath values in the database) serves from 'Jollibee (MVP)'
 // instead. The plain 'Jollibee' folder is a small, already-optimized
 // leftover only 3 stale products still reference.
-const TARGET_DIR = path.join(__dirname, '..', 'public', 'images', 'Jollibee (MVP)');
+const TARGET_DIR = path.join(__dirname, '..', 'frontend', 'public', 'images', 'Jollibee (MVP)');
 const MAX_WIDTH = 800;
 const JPEG_QUALITY = 75;
 

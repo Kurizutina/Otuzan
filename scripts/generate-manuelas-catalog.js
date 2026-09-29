@@ -3,8 +3,8 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
-const source = path.join(root, 'src/components/home/ManuelasMenu/manuelasMenuData.js');
-const destination = path.join(root, 'laravel/database/seeders/data/manuelas-products.json');
+const source = path.join(root, 'frontend/src/components/home/ManuelasMenu/manuelasMenuData.js');
+const destination = path.join(root, 'backend/database/seeders/data/manuelas-products.json');
 
 (async () => {
   const code = fs.readFileSync(source, 'utf8');

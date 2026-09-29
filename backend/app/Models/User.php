@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Laravel\Sanctum\HasApiTokens;
+
+class User extends Authenticatable
+{
+    use HasApiTokens, HasFactory;
+
+    protected $table = 'Users';
+    protected $primaryKey = 'UserID';
+    public $timestamps = false;
+    protected $fillable = ['UserName', 'Contact', 'Role', 'UserType', 'Email', 'PasswordHash', 'Address', 'MustChangePassword'];
+    protected $casts = ['MustChangePassword' => 'boolean'];
+    protected $hidden = ['PasswordHash'];
+    protected $authPasswordName = 'PasswordHash';
+
+    public function profile(): array
+    {
+        return [
+            'id' => $this->UserID, 'username' => $this->UserName, 'contact' => $this->Contact, 'userType' => $this->UserType,
+            'role' => $this->Role, 'email' => $this->Email, 'address' => $this->Address ?? '',
+        ];
+    }
+
+    public function orders(): HasMany { return $this->hasMany(Order::class, 'UserID'); }
+    public function notifications(): HasMany { return $this->hasMany(Notification::class, 'UserID'); }
+}

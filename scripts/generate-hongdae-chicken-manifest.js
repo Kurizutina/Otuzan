@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const root = path.resolve(__dirname, '../public/images/Hongdae Chicken');
+const root = path.resolve(__dirname, '../frontend/public/images/Hongdae Chicken');
 const image = (category, file) => `/images/Hongdae Chicken/${category}/${file}`;
 const rows = [
   ['Boneless Chicken', 'Signature Boneless Chicken With Rice Ala Carte (1 Pc With Rice)', 144, image('Boneless Chicken', 'Signature Boneless Chicken With Rice Ala Carte.webp')],

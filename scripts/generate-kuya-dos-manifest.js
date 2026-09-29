@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const root = path.resolve(__dirname, '../public/images/Kuya Dos');
+const root = path.resolve(__dirname, '../frontend/public/images/Kuya Dos');
 const image = (category, file) => `/images/Kuya Dos/${category}/${file}`;
 const rows = [
   ['Lauriat Meal', 'Pork Lauriat', 230, image('Lauriat Meal', 'Pork Lauriat.webp')],

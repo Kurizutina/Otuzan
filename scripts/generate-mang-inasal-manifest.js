@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const root = path.resolve(__dirname, '../public/images/Mang Inasal');
+const root = path.resolve(__dirname, '../frontend/public/images/Mang Inasal');
 const pricesRoot = path.join(root, 'Prices');
 const outputPath = path.join(root, 'menu-manifest.json');
 const imageExtensions = new Set(['.webp', '.jpg', '.jpeg', '.png']);

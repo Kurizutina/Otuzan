@@ -4,7 +4,7 @@ const path = require('path');
 const { spawn, spawnSync } = require('child_process');
 
 const root = path.resolve(__dirname, '..');
-const backend = path.join(root, 'laravel');
+const backend = path.join(root, 'backend');
 const php = process.env.PHP_BINARY || (fs.existsSync('C:/xampp/php/php.exe') ? 'C:/xampp/php/php.exe' : 'php');
 const commands = { '--check': ['otuzan:db-check'], '--migrate': ['migrate'], '--test': ['test'] };
 let serverEnv = process.env;
@@ -17,12 +17,12 @@ const run = (args) => {
 
 (async () => {
   if (!fs.existsSync(path.join(backend, '.env')) || !fs.existsSync(path.join(backend, 'vendor/autoload.php'))) {
-    throw new Error('Configure laravel/.env and install Composer dependencies first. See README.md.');
+    throw new Error('Configure backend/.env and install Composer dependencies first. See README.md.');
   }
   const command = commands[process.argv[2]];
   if (command) { process.exitCode = run(command); return; }
   const check = run(['otuzan:db-check']);
-  if (check) throw new Error('Database unavailable. Start MySQL in XAMPP and check laravel/.env.');
+  if (check) throw new Error('Database unavailable. Start MySQL in XAMPP and check backend/.env.');
   // PHP parses uploads before Laravel boots. Keep its temporary files in
   // this checkout rather than relying on writable access to XAMPP's tmp.
   const iniDirectory = path.join(root, '.local', 'php');
