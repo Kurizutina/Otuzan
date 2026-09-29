@@ -43,6 +43,8 @@ Frontend on **Vercel**: import the repo with **root directory `frontend`** — `
 
 Backend on **Railway**: create the service from `backend` as the root — `backend/railway.json` pins the Nixpacks build (`composer install --no-dev --optimize-autoloader --no-interaction`) and a start command that runs `php artisan migrate --force` then `php artisan serve --host=0.0.0.0 --port=$PORT`, with `/api/health` as the health check. Two caveats: `php artisan serve` is fine for this capstone's traffic but is not a production-hardened server (swap to php-fpm/roadrunner if that ever matters), and `backend/public/uploads` is ephemeral on Railway — uploaded brand/product images and bill proofs are lost on redeploy unless you attach a persistent volume.
 
+**Safety:** Railway environments can be transient. Before real user data exists, verify your database backup strategy (Railway's automated snapshots or external scheduled dumps) to protect against data loss.
+
 Backend environment, set on the host - never committed:
 
 - `APP_ENV=production` and `APP_DEBUG=false`: debug mode returns full stack traces with real server paths to anyone who trips an error.
