@@ -1,4 +1,4 @@
-.announcement-bar { padding:16px clamp(16px, 5vw, 78px) 14px; background:linear-gradient(120deg, var(--color-primary-dark) 0%, var(--color-accent) 52%, var(--color-coral) 100%); }
+.announcement-bar { padding:16px clamp(16px, 5vw, 78px) 14px; background:linear-gradient(120deg, var(--color-primary-dark) 0%, var(--color-accent) 52%, var(--color-pink) 100%); }
 .announcement-bar-inner { max-width:860px; margin:auto; }
 .announcement-viewport { overflow:hidden; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.08); }
 .announcement-track { display:flex; transition:transform .45s ease; will-change:transform; }

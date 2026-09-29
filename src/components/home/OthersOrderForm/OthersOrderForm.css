@@ -64,7 +64,7 @@
   border: none;
   border-radius: 50%;
   background: #fbf1e8;
-  color: #7a2e08;
+  color: #7c3a06;
   font-size: 25px;
   cursor: pointer;
 }
@@ -248,7 +248,7 @@
   border: 1px solid #f3dec9;
   border-radius: 10px;
   background: #fff7f0;
-  color: #9a3a0b;
+  color: #8f4708;
   font-weight: 700;
   cursor: pointer;
 }
@@ -285,7 +285,7 @@
   height: 36px;
   border: none;
   background: transparent;
-  color: #9a3a0b;
+  color: #8f4708;
   font-size: 19px;
   cursor: pointer;
 }
@@ -349,7 +349,7 @@
   gap: 7px;
   border: 1px solid var(--color-primary);
   background: #fff7f0;
-  color: #9a3a0b;
+  color: #8f4708;
 }
 
 .add-to-cart-button:hover {
@@ -364,7 +364,7 @@
 }
 
 .place-order-button:hover {
-  background: #a8420e;
+  background: #aa5109;
 }
 
 .sr-only {

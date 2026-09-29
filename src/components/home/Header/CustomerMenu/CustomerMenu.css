@@ -103,7 +103,7 @@
 
 .customer-menu-popover > button:hover {
   background: #fff6ee;
-  color: #9a3a0b;
+  color: #8f4708;
 }
 
 .customer-menu-popover .customer-logout-option {
@@ -167,7 +167,7 @@
   border: 0;
   border-radius: 50%;
   background: #fbf1e8;
-  color: #7a2e08;
+  color: #7c3a06;
   font-size: 25px;
   cursor: pointer;
 }
@@ -206,7 +206,7 @@
 .profile-field > div > i {
   width: 42px;
   flex-shrink: 0;
-  color: #d8620f;
+  color: #b8580a;
   text-align: center;
 }
 

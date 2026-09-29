@@ -1,6 +1,6 @@
 .order-chat { display: grid; gap: 8px; margin: 14px 0; padding: 10px; border: 1px solid #f0dce4; border-radius: 10px; background: #fff7fa; }
 .order-chat-empty { display: flex; align-items: center; gap: 10px; color: #78636c; font-size: 13px; }
-.order-chat-empty i { color: #bc4610; font-size: 16px; }
+.order-chat-empty i { color: #b8580a; font-size: 16px; }
 .order-chat-messages { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow-y: auto; padding: 4px 2px; }
 .order-chat-hint { margin: 0; padding: 8px 0; color: #8a7079; font-size: 12px; text-align: center; }
 .order-chat-bubble { max-width: 85%; padding: 8px 10px; border-radius: 12px; background: #fff; border: 1px solid #f0dce4; align-self: flex-start; }

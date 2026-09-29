@@ -22,7 +22,7 @@ export const ROLES = {
     key: 'admin',
     label: 'Admin',
     icon: 'fa-solid fa-shield-halved',
-    color: '#bc4610',
+    color: '#b8580a',
     requiresCode: true,
     codeLabel: 'Admin Access Code',
     fields: ['name', 'contactNumber']

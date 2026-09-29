@@ -1,27 +1,34 @@
 :root {
-  /* Design tokens - centralizes the sunset-orange brand palette derived
-     from the Otu-Zan logo itself (black badge, gold ring, orange rider,
-     gold→orange→rose sunset gradient), plus the card/shadow language that
-     was previously repeated (and drifting slightly) as raw hex/shadow
-     literals across every component's own CSS file. New or touched
-     components should reference these instead of hardcoding another
-     near-identical value.
+  /* Design tokens - centralizes the brand palette: orange as the main color,
+     with light orange (#f9b45e) and light yellow (#fff23a) as fills and
+     highlights and dark pink (#b8286e) as the accent. Those three are the
+     user-supplied hexes that carry the identity; the deeper values below are
+     derived from them (same hue as #f9b45e, darker) so that white text on
+     brand surfaces keeps >=4.5:1 contrast. The light hexes only ever sit
+     under dark text - never under white.
 
      Palette notes:
-     - --color-primary (#bc4610) is a deep sunset orange: ~5.2:1 contrast
-       both as white text on it and as text on white/light surfaces, so it
-       safely serves buttons, links, and headings (WCAG AA for normal text).
-     - --color-accent/--color-coral are decorative gradient stops (the
-       logo's sunset arc); coral intentionally carries the logo's rose so
-       the hero/announcement gradients echo the ring-and-lettering sweep.
+     - --color-primary (#b8580a) is the deep orange: 4.74:1 against white in
+       both directions, so it safely serves buttons (white text on it), links
+       and headings (it as text on white) - WCAG AA for normal text.
+     - --color-primary-dark (#7c3a06, 7.95:1) is hover/pressed and the dark
+       end of the brand gradients.
+     - --color-accent (#d46911) is the mid orange gradient stop, keeping the
+       white-text banners (hero, announcement, admin, rider) readable.
+     - --color-orange-light / --color-yellow are fills, tints, and
+       highlights with dark text on them (8.9:1 and 13.8:1 vs #26201c).
+     - --color-pink (#b8286e, 5.88:1 under white) is the decorative accent:
+       the tail of the hero/announcement gradients and category dots.
      - Deliberately original: no competitor palette is reproduced here
        (Foodpanda magenta, McDonald's/Jollibee red-yellow, Grab green).
      - Success/warning/error stay conventional semantic colors - they are
        meaning, not branding. */
-  --color-primary: #bc4610;
-  --color-primary-dark: #7a2e08;
-  --color-accent: #d8620f;
-  --color-coral: #e64a78;
+  --color-primary: #b8580a;
+  --color-primary-dark: #7c3a06;
+  --color-accent: #d46911;
+  --color-orange-light: #f9b45e;
+  --color-yellow: #fff23a;
+  --color-pink: #b8286e;
   --color-primary-light: #ffeee2;
   --color-text: #26201c;
   --color-text-muted: #75685f;

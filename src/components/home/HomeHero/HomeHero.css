@@ -4,7 +4,7 @@
   min-height: clamp(280px, 35vw, 410px);
   margin: 0;
   padding: clamp(38px, 7vw, 82px) 20px;
-  background: linear-gradient(120deg, var(--color-primary-dark) 0%, var(--color-accent) 52%, var(--color-coral) 100%);
+  background: linear-gradient(120deg, var(--color-primary-dark) 0%, var(--color-accent) 52%, var(--color-pink) 100%);
   color: #fff;
 }
 
@@ -51,8 +51,8 @@
   margin-top: clamp(28px, 4vw, 48px);
   padding: 13px 25px;
   border-radius: 12px;
-  background: #fff;
-  color: #9a3a0b;
+  background: #fff23a;
+  color: #7c3a06;
   font-size: 16px;
   font-weight: 700;
   border: 0;

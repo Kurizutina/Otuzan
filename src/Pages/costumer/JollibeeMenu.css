@@ -82,11 +82,11 @@
 }
 
 .mcdo-page-header {
-  background: linear-gradient(100deg, #9a3a0b, var(--color-primary));
+  background: linear-gradient(100deg, #8f4708, var(--color-primary));
 }
 
 .mcdo-eyebrow {
-  color: #9a3a0b !important;
+  color: #8f4708 !important;
 }
 
 .restaurant-menu-loading {
@@ -153,7 +153,7 @@
   border: 1px solid #f3cfaa;
   border-radius: 12px;
   background: #fff;
-  color: #9a3a0b;
+  color: #8f4708;
   font: inherit;
   font-size: 13px;
   font-weight: 700;
@@ -619,7 +619,7 @@
   height: 30px;
   border: 0;
   background: #fff7f0;
-  color: #9a3a0b;
+  color: #8f4708;
   cursor: pointer;
 }
 

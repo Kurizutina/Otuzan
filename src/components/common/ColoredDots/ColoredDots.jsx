@@ -5,7 +5,7 @@ const ColoredDots = () => {
     'var(--color-warning)',
     'var(--color-primary)',
     '#F15A29',
-    '#e0671a',
+    '#b8286e',
     'var(--color-primary-dark)'
   ];
 

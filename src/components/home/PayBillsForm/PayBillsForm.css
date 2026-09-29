@@ -67,7 +67,7 @@
   border: 0;
   border-radius: 50%;
   background: #fbf1e8;
-  color: #7a2e08;
+  color: #7c3a06;
   font-size: 25px;
   cursor: pointer;
 }
@@ -166,7 +166,7 @@
   border: 0;
   border-radius: 50%;
   background: #fbf1e8;
-  color: #7a2e08;
+  color: #7c3a06;
   font-size: 25px;
   cursor: pointer;
 }
@@ -314,7 +314,7 @@
 }
 
 .payment-upload-action {
-  color: #9a3a0b;
+  color: #8f4708;
   font-size: 11px;
   font-weight: 700;
 }
@@ -351,7 +351,7 @@
 }
 
 .payment-place:hover {
-  background: #a8420e;
+  background: #aa5109;
 }
 
 @media (max-width: 650px) {

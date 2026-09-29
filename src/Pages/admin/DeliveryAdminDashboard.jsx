@@ -440,7 +440,7 @@ const SEGMENT_META = {
   Champions: { color: '#34b875', description: 'Recent, frequent, high-spending - your best customers.' },
   Loyal: { color: '#3d9be9', description: 'Order often and recently, not yet top spenders.' },
   'At Risk': { color: '#f9c12f', description: "Used to order often, haven't in a while - worth a nudge." },
-  New: { color: '#bc4610', description: 'Just started ordering - too early to tell how often they will return.' },
+  New: { color: '#b8580a', description: 'Just started ordering - too early to tell how often they will return.' },
   'Needs Attention': { color: '#b285a3', description: "Middling on every measure - not a clear segment either way." },
   Lost: { color: '#8b8b8b', description: "Infrequent and long inactive - least likely to come back on their own." }
 };
