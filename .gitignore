@@ -36,3 +36,6 @@ yarn-error.log*
 # tracked since this project has no separate image hosting yet
 /backend/public/uploads/bill-documents/*
 !/backend/public/uploads/bill-documents/.gitkeep
+# never commit local browser/agent files
+.tmp-browser-profile/
+SKILLS.md
