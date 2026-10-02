@@ -578,12 +578,25 @@ select.input-field {
 }
 
 .auth-simple-card {
+  position: relative;
   width: min(100%, 460px);
   padding: 2.5rem;
   background: #fff;
   border: 2px solid #f0f0f0;
   border-radius: 2rem;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* Keeps the card's own box size fixed when a status message appears, so the
+   page (vertically centered via .app-container) doesn't visibly shift. */
+.auth-simple-card .message {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 1rem;
+  margin-bottom: 0;
+  z-index: 1;
 }
 
 .auth-simple-card .logo-container {
