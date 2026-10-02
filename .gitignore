@@ -39,3 +39,12 @@ yarn-error.log*
 # never commit local browser/agent files
 .tmp-browser-profile/
 SKILLS.md
+
+# internal notes - not for the public repo
+TODO.md
+.claude/
+
+# legacy backend copy and runtime data
+/laravel/
+*.log
+/backend/storage/app/order-backups/

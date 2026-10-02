@@ -33,7 +33,7 @@ Requires Node.js, PHP 8.2+, Composer, and MySQL/MariaDB (XAMPP includes PHP, Mar
 
 For real Forgot Password emails, configure the `MAIL_*` values in `backend/.env` for your SMTP provider. The default `MAIL_MAILER=log` keeps local development safe by writing reset links to `backend/storage/logs/laravel.log`; never commit `backend/.env` or SMTP credentials.
 
-Laravel migrations adopt existing Users records and add the address and API-token storage. Existing bcrypt passwords and account IDs are preserved. Staff accounts use backend roles `driver` and `admin`; local default access codes are `DRIVER2024` and `ADMIN2024`.
+Laravel migrations adopt existing Users records and add the address and API-token storage. Existing bcrypt passwords and account IDs are preserved. Staff accounts use backend roles `driver` and `admin`.
 
 ## Deploying to a host
 
