@@ -10,7 +10,14 @@ class SecurityHeaders
 {
     public function handle(Request $request, Closure $next): Response
     {
-        header_remove('X-Powered-By');
+        // header_remove() operates on PHP's real sent-headers list, which only
+        // exists for an actual HTTP response. Under `php artisan test` (CLI
+        // SAPI, PHPUnit has already written to stdout) headers are always
+        // "already sent", and calling it there throws instead of no-op-ing -
+        // broke the entire test suite (84/90 failing) until guarded here.
+        if (!headers_sent()) {
+            header_remove('X-Powered-By');
+        }
 
         $response = $next($request);
 

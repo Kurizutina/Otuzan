@@ -56,6 +56,24 @@ class AuthApiTest extends TestCase
         $this->postJson('/api/auth/register', $data)->assertCreated();
     }
 
+    public function test_registration_rejects_placeholder_emails(): void
+    {
+        $data = [
+            'username' => 'Faker', 'password' => 'secret123',
+            'contact' => '09123456789', 'userType' => 'non_student',
+        ];
+
+        // Placeholder domain - real/resolvable, but never a real inbox.
+        $this->postJson('/api/auth/register', [...$data, 'email' => 'someone@test.com'])
+            ->assertUnprocessable()->assertJsonStructure(['error']);
+        // Placeholder local-part at an otherwise-real provider.
+        $this->postJson('/api/auth/register', [...$data, 'email' => 'asdf@gmail.com'])
+            ->assertUnprocessable();
+        // RFC 2606 reserved domains stay allowed - this suite's own fixtures use them.
+        $this->postJson('/api/auth/register', [...$data, 'email' => 'faker@example.com'])
+            ->assertCreated();
+    }
+
     public function test_login_accepts_migrated_bcryptjs_password_hash_and_uses_the_account_role(): void
     {
         $user = $this->account();
