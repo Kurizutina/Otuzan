@@ -32,10 +32,40 @@ class AuthController extends Controller
         'discard.email', 'emailondeck.com', 'spamgourmet.com', 'mytemp.email', 'tempinbox.com',
     ];
 
-    private function isDisposableEmail(string $email): bool
+    // Placeholder/"just typed something" domains that are real, resolvable
+    // domains but never a real person's inbox - the `email` rule alone can't
+    // catch these since they're syntactically valid. No live DNS lookup is used
+    // here on purpose: this runs on every registration attempt against a live,
+    // publicly deployed system, and a DNS-dependent check would make signup
+    // fail on a transient network issue instead of only on a fake address.
+    // Deliberately excludes RFC 2606 reserved domains (example.com/.org/.net/.edu,
+    // test.test) despite being common "obviously fake" picks - this project's
+    // own test suite registers real accounts against @example.com
+    // (AuthApiTest::test_registration_persists_account_address_and_returns_compatible_token)
+    // and blocking it would reject that as fake. Also excludes domains a real
+    // provider actually owns (email.com is genuine mail.com-operated webmail).
+    private const PLACEHOLDER_EMAIL_DOMAINS = [
+        'test.com', 'fake.com', 'foo.com', 'bar.com', 'asdf.com',
+        'none.com', 'noemail.com', 'notreal.com', 'invalid.com', 'nomail.com',
+        'domain.com', 'website.com', 'company.com',
+    ];
+
+    // Local-parts ("the bit before @") that are never a real person's name or
+    // handle, regardless of domain - catches e.g. "asdf@gmail.com" or
+    // "test123@yahoo.com" that a domain-only blocklist would miss.
+    private const PLACEHOLDER_LOCAL_PARTS = [
+        'test', 'testing', 'fake', 'asdf', 'asdfasdf', 'qwerty', 'none', 'nobody',
+        'noemail', 'dummy', 'sample', 'example', 'xxx', 'admin', 'user',
+    ];
+
+    private function isBlockedEmail(string $email): bool
     {
         $domain = strtolower(substr(strrchr($email, '@'), 1));
-        return in_array($domain, self::DISPOSABLE_EMAIL_DOMAINS, true);
+        if (in_array($domain, self::DISPOSABLE_EMAIL_DOMAINS, true)) return true;
+        if (in_array($domain, self::PLACEHOLDER_EMAIL_DOMAINS, true)) return true;
+
+        $localPart = strtolower(strstr($email, '@', true) ?: $email);
+        return in_array($localPart, self::PLACEHOLDER_LOCAL_PARTS, true);
     }
 
     public function register(Request $request): JsonResponse
@@ -49,7 +79,7 @@ class AuthController extends Controller
             'address' => ['nullable', 'string', 'max:2000'],
         ]);
         $email = strtolower(trim($data['email']));
-        if ($this->isDisposableEmail($email)) {
+        if ($this->isBlockedEmail($email)) {
             return response()->json(['error' => 'Please use a real, permanent email address to register.'], 422);
         }
         if (User::where('Email', $email)->exists()) {
