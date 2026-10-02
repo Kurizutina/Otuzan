@@ -31,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // would make every URL/secure-cookie decision wrong in production.
         // Harmless locally: direct artisan-serve requests carry no such header.
         $middleware->trustProxies(at: '*');
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(fn ($request) => $request->is('api/*') || $request->expectsJson());

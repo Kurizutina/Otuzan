@@ -88,7 +88,7 @@ Route::get('/health', fn () => response()->json(['status' => 'ok', 'backend' => 
 Route::get('/health/db', function () {
     try {
         DB::select('SELECT 1');
-        return response()->json(['status' => 'connected', 'database' => config('database.connections.mysql.database'), 'backend' => 'laravel']);
+        return response()->json(['status' => 'connected', 'backend' => 'laravel']);
     } catch (Throwable $error) {
         report($error);
         return response()->json(['status' => 'disconnected'], 503);
