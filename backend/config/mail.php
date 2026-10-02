@@ -45,7 +45,14 @@ return [
             'port' => env('MAIL_PORT', 2525),
             'username' => env('MAIL_USERNAME'),
             'password' => env('MAIL_PASSWORD'),
-            'timeout' => null,
+            // Previously null (no limit) - a blocked/unreachable SMTP host (e.g. a
+            // host that restricts outbound SMTP) hung the request indefinitely
+            // instead of failing into the existing catch(Throwable) in
+            // AuthController::requestPasswordReset, which already returns a clean
+            // 503. Reproduced live: a real forgot-password request hung 45+
+            // seconds with no response. 10s is generous for a real SMTP handshake
+            // but still turns a dead connection into a fast, clean error.
+            'timeout' => (int) env('MAIL_TIMEOUT', 10),
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
