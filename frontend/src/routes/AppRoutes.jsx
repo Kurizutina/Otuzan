@@ -20,6 +20,7 @@ import RiderDashboard from '../Pages/rider/RiderDashboard';
 import DeliveryAdminDashboard from '../Pages/admin/DeliveryAdminDashboard';
 import CatalogBrandMenu from '../Pages/costumer/CatalogBrandMenu';
 import FAQ from '../Pages/costumer/FAQ';
+import NotFound from '../Pages/NotFound';
 
 const AppRoutes = () => {
   return (
@@ -91,6 +92,10 @@ const AppRoutes = () => {
             element={<DeliveryAdminDashboard />}
           />
         </Route>
+
+        {/* Must stay last - react-router matches routes in declaration order,
+            and a catch-all earlier would shadow every route below it. */}
+        <Route path="*" element={<NotFound />} />
 
       </Routes>
 
