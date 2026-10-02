@@ -325,6 +325,22 @@ const cartOwner = (item) => item.cartOwner || 'guest';
 const cartForActiveOwner = (items = []) => items.filter((item) => cartOwner(item) === activeCartOwner());
 const tagCartForActiveOwner = (items = []) => items.map((item) => ({ ...item, cartOwner: activeCartOwner() }));
 
+// Combines by cartId (same product/source) instead of appending duplicates,
+// so merging a guest cart into an account that already has matching items
+// adds quantities rather than listing the product twice.
+const mergeCartItems = (existing = [], incoming = []) => {
+  const merged = [...existing];
+  incoming.forEach((item) => {
+    const index = merged.findIndex((entry) => entry.cartId === item.cartId);
+    if (index >= 0) {
+      merged[index] = { ...merged[index], quantity: merged[index].quantity + item.quantity };
+    } else {
+      merged.push(item);
+    }
+  });
+  return merged;
+};
+
 export const CustomerActivityProvider = ({ children }) => {
   const saved = useMemo(() => loadActivity(), []);
   const [cart, setCart] = useState(() => cartForActiveOwner(saved.cart));
@@ -397,7 +413,30 @@ export const CustomerActivityProvider = ({ children }) => {
     // browser-local cart when the signed-in account changes so the previous
     // customer's in-memory basket can never be shown or re-saved for the
     // next account.
-    const syncCartForSession = () => setCart(cartForActiveOwner(loadActivity().cart));
+    const syncCartForSession = () => {
+      const latest = loadActivity();
+      const allItems = latest.cart || [];
+      const owner = activeCartOwner();
+      const guestItems = owner !== 'guest' ? allItems.filter((item) => cartOwner(item) === 'guest') : [];
+      if (!guestItems.length) {
+        setCart(cartForActiveOwner(allItems));
+        return;
+      }
+      // A guest cart built in this browser immediately before logging in is
+      // assumed to belong to the account that just signed in, so hand it
+      // over instead of stranding it - then clear the guest slot so it
+      // can't resurface for a different account later (see the ownership
+      // note above on shared-device privacy).
+      const ownerItems = allItems.filter((item) => cartOwner(item) === owner);
+      const retaggedGuestItems = guestItems.map((item) => ({ ...item, cartOwner: owner }));
+      const mergedOwnerItems = mergeCartItems(ownerItems, retaggedGuestItems);
+      const nextCart = [
+        ...allItems.filter((item) => cartOwner(item) !== 'guest' && cartOwner(item) !== owner),
+        ...mergedOwnerItems
+      ];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...latest, cart: nextCart }));
+      setCart(cartForActiveOwner(nextCart));
+    };
     window.addEventListener(SESSION_CHANGED_EVENT, syncCartForSession);
     return () => {
       window.removeEventListener('storage', syncActivity);
