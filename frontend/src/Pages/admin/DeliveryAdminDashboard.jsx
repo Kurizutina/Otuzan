@@ -560,14 +560,30 @@ const RevenueBarGraph = ({ daily }) => {
   });
   const labelEvery = Math.ceil(daily.length / 6);
 
+  const gridlines = [0.25, 0.5, 0.75].map((fraction) => height - padding - plotHeight * fraction);
+
   return <svg className="admin-revenue-graph" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Daily revenue trend">
+    <defs>
+      <linearGradient id="revenueBarFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="var(--color-primary-dark)" />
+        <stop offset="100%" stopColor="var(--admin-accent)" />
+      </linearGradient>
+    </defs>
+    {gridlines.map((y) => (
+      <line x1={padding} y1={y} x2={width - padding} y2={y} className="admin-revenue-graph-gridline" key={y} />
+    ))}
     <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} className="admin-revenue-graph-axis" />
-    {bars.map((bar) => <rect
-      x={bar.x} y={bar.y} width={barWidth} height={bar.barHeight}
-      rx="3" className="admin-revenue-graph-bar" key={bar.day.date}
-    >
-      <title>{`${bar.day.date}: ${formatCurrency(bar.day.revenue)}`}</title>
-    </rect>)}
+    {bars.map((bar) => <g className="admin-revenue-graph-bar-group" key={bar.day.date}>
+      <rect
+        x={bar.x} y={bar.y} width={barWidth} height={bar.barHeight}
+        rx="4" fill="url(#revenueBarFill)" className="admin-revenue-graph-bar"
+      >
+        <title>{`${bar.day.date}: ${formatCurrency(bar.day.revenue)}`}</title>
+      </rect>
+      <text x={bar.x + barWidth / 2} y={bar.y - 6} className="admin-revenue-graph-value" textAnchor="middle">
+        {formatCurrency(bar.day.revenue).replace('.00', '')}
+      </text>
+    </g>)}
     {bars.filter((_, index) => index % labelEvery === 0 || index === bars.length - 1).map((bar) => (
       <text x={bar.x + barWidth / 2} y={height - padding + 16} className="admin-revenue-graph-label" textAnchor="middle" key={bar.day.date}>
         {bar.day.date.slice(5)}
