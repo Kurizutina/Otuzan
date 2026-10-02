@@ -31,7 +31,7 @@ Requires Node.js, PHP 8.2+, Composer, and MySQL/MariaDB (XAMPP includes PHP, Mar
 5. Inside `backend`, run `php artisan key:generate`, `php artisan migrate`, then `php artisan db:seed` to load the initial catalog.
 6. Copy `frontend/.env.example` to `frontend/.env`, then start the backend and frontend as above.
 
-For real Forgot Password emails, configure the `MAIL_*` values in `backend/.env` for your SMTP provider. The default `MAIL_MAILER=log` keeps local development safe by writing reset links to `backend/storage/logs/laravel.log`; never commit `backend/.env` or SMTP credentials.
+For real Forgot Password emails, configure the `MAIL_*` values in `backend/.env` for your SMTP provider (fine for local development). The default `MAIL_MAILER=log` keeps local development safe by writing reset links to `backend/storage/logs/laravel.log`; never commit `backend/.env` or mail credentials. In production on Railway, use `MAIL_MAILER=sendgrid` instead — see "Deploying to a host" below for why.
 
 Laravel migrations adopt existing Users records and add the address and API-token storage. Existing bcrypt passwords and account IDs are preserved. Staff accounts use backend roles `driver` and `admin`.
 
@@ -50,7 +50,8 @@ Backend environment, set on the host - never committed:
 - `APP_ENV=production` and `APP_DEBUG=false`: debug mode returns full stack traces with real server paths to anyone who trips an error.
 - `APP_URL`: the backend's own public URL (`https://...`).
 - `FRONTEND_URL`: the deployed frontend origin, exactly (scheme + host, no trailing slash) — for the Vercel deployment above, your `https://....vercel.app` origin. CORS allows this origin and rejects every other; comma-separate if two origins are ever needed.
-- `DB_*` and `MAIL_*`: the host's MySQL and SMTP credentials.
+- `DB_*`: the host's MySQL credentials.
+- Mail (for Forgot Password): on Railway, use `MAIL_MAILER=sendgrid` and `SENDGRID_API_KEY` — Railway blocks raw outbound SMTP (ports 25/587) on Free/Hobby plans, so `MAIL_MAILER=smtp` will hang and then fail there regardless of credentials. Sign up free at sendgrid.com, verify a Single Sender (your own email address — no domain purchase needed), create an API key, and set `MAIL_FROM_ADDRESS` to exactly that verified address. See `backend/.env.example` for the full explanation.
 - Run `php artisan key:generate` once per environment and `php artisan migrate --force` on each release.
 
 First admin account: public signup always creates customers, so bootstrap the first admin on the server with:

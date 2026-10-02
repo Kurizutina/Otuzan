@@ -56,6 +56,15 @@ return [
             'local_domain' => env('MAIL_EHLO_DOMAIN', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST)),
         ],
 
+        // Sends over HTTPS (SendGrid's v3 API), not SMTP - Railway blocks raw
+        // outbound SMTP (ports 25/587) on Free/Hobby plans, which is why the
+        // 'smtp' mailer above can't reach Gmail from production regardless of
+        // credentials. See App\Mail\Transport\SendGridApiTransport.
+        'sendgrid' => [
+            'transport' => 'sendgrid',
+            'api_key' => env('SENDGRID_API_KEY'),
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],
