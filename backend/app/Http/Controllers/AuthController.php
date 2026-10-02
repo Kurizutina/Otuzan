@@ -58,6 +58,12 @@ class AuthController extends Controller
         'noemail', 'dummy', 'sample', 'example', 'xxx', 'admin', 'user',
     ];
 
+    // Laravel's `email` rule only checks RFC syntax - "a@ce" (no dot, no real
+    // TLD) passes it despite never being a deliverable address. Required
+    // wherever an email is being set (register, profile edit), so an account
+    // can't be edited into an address nobody can actually reach.
+    private const EMAIL_FORMAT_RULE = 'regex:/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/i';
+
     private function isBlockedEmail(string $email): bool
     {
         $domain = strtolower(substr(strrchr($email, '@'), 1));
@@ -71,7 +77,7 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'email', self::EMAIL_FORMAT_RULE, 'max:255'],
             'password' => ['required', 'string', 'min:6', 'max:72'],
             'userType' => ['required', 'in:student,non_student'],
             'username' => ['required', 'string', 'max:100'],
@@ -231,12 +237,15 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'username' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'email', self::EMAIL_FORMAT_RULE, 'max:255'],
             'address' => ['required', 'string', 'max:2000'],
             'password' => ['nullable', 'string', 'min:6', 'max:72'],
         ], [], ['username' => 'full name']);
         $user = $request->user();
         $email = strtolower(trim($data['email']));
+        if ($this->isBlockedEmail($email)) {
+            return response()->json(['error' => 'Please use a real, permanent email address.'], 422);
+        }
         if (User::where('Email', $email)->where('UserID', '!=', $user->UserID)->exists()) {
             return response()->json(['error' => 'email is already registered'], 409);
         }

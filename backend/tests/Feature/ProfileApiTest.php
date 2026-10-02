@@ -47,4 +47,21 @@ class ProfileApiTest extends TestCase
         $this->assertSame($user->UserName, $user->fresh()->UserName);
         $this->assertSame($user->Email, $user->fresh()->Email);
     }
+
+    public function test_profile_update_rejects_undeliverable_and_placeholder_emails(): void
+    {
+        $user = User::factory()->create();
+        $token = $this->withToken($user->createToken('test')->plainTextToken);
+        $base = ['username' => 'Name', 'address' => 'Address'];
+
+        // No dot/real TLD - syntactically "valid" but can never receive mail.
+        $token->patchJson('/api/auth/me', [...$base, 'email' => 'a@ce'])->assertUnprocessable();
+        // Same placeholder blocklist as registration.
+        $token->patchJson('/api/auth/me', [...$base, 'email' => 'someone@mailinator.com'])->assertUnprocessable();
+        $token->patchJson('/api/auth/me', [...$base, 'email' => 'test@test.com'])->assertUnprocessable();
+        $this->assertSame($user->Email, $user->fresh()->Email);
+
+        $token->patchJson('/api/auth/me', [...$base, 'email' => 'real@example.com'])->assertOk();
+        $this->assertSame('real@example.com', $user->fresh()->Email);
+    }
 }

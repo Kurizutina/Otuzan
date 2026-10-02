@@ -76,7 +76,9 @@ class AccountManagementController extends Controller
 
         $data = $request->validate([
             'UserName' => [$partial ? 'sometimes' : 'required', 'string', 'max:100'],
-            'Email' => [$partial ? 'sometimes' : 'required', 'email', 'max:255', $emailRule],
+            // Plain `email` only checks RFC syntax - "a@ce" passes despite never
+            // being deliverable. Same regex as AuthController::EMAIL_FORMAT_RULE.
+            'Email' => [$partial ? 'sometimes' : 'required', 'email', 'regex:/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/i', 'max:255', $emailRule],
             'Contact' => [$partial ? 'sometimes' : 'required', 'string', 'max:50'],
             'Address' => ['nullable', 'string', 'max:2000'],
             'password' => $passwordRules,
