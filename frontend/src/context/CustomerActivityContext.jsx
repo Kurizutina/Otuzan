@@ -286,6 +286,17 @@ export const calculateEstimatedWaitMinutes = (items = []) => (
   Math.min(50, 40 + ((getOrderItemCount(items) - 1) * 2))
 );
 
+// The range comes from the server (median of recent deliveries - see
+// OrderController::attachDeliveryEstimates) once the backend knows the order,
+// so every device shows the same value; before that, the same +/-5 minute
+// range around the local formula.
+export const ESTIMATE_NOTE = 'Based on recent orders; not guaranteed.';
+export const formatEstimateRange = (order) => {
+  const fallback = calculateEstimatedWaitMinutes(order.items);
+  const range = order.estimatedWaitRange || { min: Math.max(5, fallback - 5), max: fallback + 5 };
+  return `Estimated ${range.min}-${range.max} min`;
+};
+
 const getCartOrderLabel = (items) => {
   if (items.length === 1) {
     const quantity = Number(items[0].quantity) || 1;

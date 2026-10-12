@@ -103,6 +103,14 @@ export const useBackendOrders = (endpoint) => {
   return backendOrdersById;
 };
 
+// Server delivery estimate (OrderController::attachDeliveryEstimates). Empty
+// when the API didn't send one, so the order keeps its own local values.
+const backendEstimate = (backend) => (backend.estimatedMinutes ? {
+  estimatedWaitRange: { min: backend.estimatedMinutes.min, max: backend.estimatedMinutes.max },
+  estimatedWaitMinutes: backend.estimatedMinutes.max,
+  estimatedCompletionAt: toUtcIso(backend.estimatedCompletionAt)
+} : {});
+
 // Builds a full local-shaped order straight from a raw backend order - for
 // when the backend knows about an order this browser's own localStorage
 // never saw at all (it was placed from a different device/browser). Without
@@ -163,6 +171,7 @@ export const toLocalOrderShape = (backend) => {
     status: backend.DeliveryStatus,
     assignedRider: backend.rider ? { id: backend.rider.UserID, name: backend.rider.UserName } : null,
     queuePosition: backend.queuePosition ?? null,
+    ...backendEstimate(backend),
     serviceFee: Number(backend.ServiceFee) || 0,
     ...(isBill ? { total: Number(backend.TotalPrice) || 0 } : {}),
     createdAt: toUtcIso(backend.OrderDate),
@@ -222,6 +231,7 @@ export const applyBackendTruth = (orders, backendOrdersById) => {
       details: payment ? { ...order.details, paymentStatus: payment.PaymentStatus } : order.details,
       ...(payment ? { serviceFee: Number(backend.ServiceFee) || 0, total: Number(backend.TotalPrice) || 0 } : {}),
       queuePosition: backend.queuePosition ?? null,
+      ...backendEstimate(backend),
       // StatusUpdatedAt is the backend's clock for rider/admin actions.
       // Keeping it on the displayed order makes the progress estimate start
       // from confirmation instead of from a stale local-storage timestamp.

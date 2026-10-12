@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   calculateEstimatedWaitMinutes,
+  ESTIMATE_NOTE,
+  formatEstimateRange,
   getOrderDisplayLabel,
   useCustomerActivity
 } from '../../../../context/CustomerActivityContext';
@@ -53,10 +55,10 @@ const formatEstimatedWait = (order, now) => {
     if (Number.isInteger(order.queuePosition)) {
       const ahead = order.queuePosition - 1;
       return ahead > 0
-        ? `${ahead} order${ahead === 1 ? '' : 's'} ahead of you • ~${estimatedMinutes} min after confirmation`
-        : `You're next • ~${estimatedMinutes} min after confirmation`;
+        ? `${ahead} order${ahead === 1 ? '' : 's'} ahead of you • ${formatEstimateRange(order)}`
+        : `You're next • ${formatEstimateRange(order)}`;
     }
-    return `${estimatedMinutes} min after confirmation`;
+    return formatEstimateRange(order);
   }
   if (order.status === 'cancelled') return 'Order cancelled';
   if (order.status === 'delivered') return 'Completed';
@@ -79,6 +81,7 @@ const EstimatedWait = ({ order, now }) => (
       <i className="fa-regular fa-clock" aria-hidden="true" />
       <strong>{formatEstimatedWait(order, now)}</strong>
     </div>
+    {!['cancelled', 'delivered'].includes(order.status) && <small className="estimated-wait-note">{ESTIMATE_NOTE}</small>}
   </div>
 );
 

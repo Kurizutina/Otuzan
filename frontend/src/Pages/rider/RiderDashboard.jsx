@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   calculateEstimatedWaitMinutes,
+  formatEstimateRange,
   getOrderDisplayLabel,
   useCustomerActivity
 } from '../../context/CustomerActivityContext';
@@ -50,9 +51,9 @@ const formatEstimatedWait = (order, now) => {
   if (order.status === 'pending_rider') {
     if (Number.isInteger(order.queuePosition)) {
       const ahead = order.queuePosition - 1;
-      return ahead > 0 ? `${ahead} ahead in queue • ~${estimatedMinutes} min after confirmation` : `Next in queue • ~${estimatedMinutes} min after confirmation`;
+      return ahead > 0 ? `${ahead} ahead in queue • ${formatEstimateRange(order)}` : `Next in queue • ${formatEstimateRange(order)}`;
     }
-    return `${estimatedMinutes} min after confirmation`;
+    return formatEstimateRange(order);
   }
   if (order.status === 'cancelled') return 'Cancelled';
   if (order.status === 'delivered') return 'Completed';

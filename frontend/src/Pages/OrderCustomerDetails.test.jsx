@@ -6,6 +6,7 @@ jest.mock('react-router-dom', () => ({ useNavigate: () => jest.fn() }));
 jest.mock('../context/CustomerActivityContext', () => ({
   getOrderDisplayLabel: (order) => order.label,
   calculateEstimatedWaitMinutes: () => 40,
+  formatEstimateRange: () => 'Estimated 35-45 min',
   useCustomerActivity: () => ({
     orders: [
       { id: 'live-1', assignedRider: { id: 1 }, label: 'Lunch', source: "Manuela's", section: 'food', status: 'pending_rider', createdAt: '2026-09-13T01:00:00Z', customerName: 'Ana Cruz', customerAddress: '12 Mabini Street, Muñoz', items: [] }

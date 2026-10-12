@@ -156,6 +156,7 @@ class OrderController extends Controller
         $perPage = min(max((int) $request->query('per_page', 10), 1), 50);
         $paginated = $query->paginate($perPage);
         $this->attachQueuePositions($paginated);
+        $this->attachDeliveryEstimates($paginated);
         return response()->json($paginated);
     }
 
@@ -184,7 +185,46 @@ class OrderController extends Controller
         $perPage = min(max((int) $request->query('per_page', 10), 1), 50);
         $paginated = $query->paginate($perPage);
         $this->attachQueuePositions($paginated);
+        $this->attachDeliveryEstimates($paginated);
         return response()->json($paginated);
+    }
+
+    // Delivery-time estimate, computed here so every device shows the same
+    // value. Measured from order placement to delivery, so it already covers
+    // the usual wait in the queue; ordersAhead is shown alongside it, not
+    // added on top. Basis: the median of the last 20 delivered orders
+    // (ignoring durations under 5 or over 180 minutes as bad data); with
+    // fewer than 5 usable orders it falls back to the original flat formula
+    // (40 min + 2 per extra item, capped at 50). A range of +/-5 minutes
+    // around that value is returned because it is an estimate, not a promise.
+    private function attachDeliveryEstimates($paginated): void
+    {
+        $durations = Order::where('DeliveryStatus', 'delivered')->whereNotNull('StatusUpdatedAt')
+            ->orderByDesc('StatusUpdatedAt')->limit(20)->get(['OrderDate', 'StatusUpdatedAt'])
+            ->map(fn (Order $order) => Carbon::parse($order->OrderDate, 'UTC')->diffInMinutes(Carbon::parse($order->StatusUpdatedAt, 'UTC'), false))
+            ->filter(fn ($minutes) => $minutes >= 5 && $minutes <= 180);
+        $median = $durations->count() >= 5 ? $durations->median() : null;
+
+        $paginated->getCollection()->transform(function (Order $order) use ($median) {
+            $minutes = (int) round($median ?? min(50, 40 + 2 * ($this->itemCount($order) - 1)));
+            $order->estimatedMinutes = [
+                'min' => max(5, $minutes - 5),
+                'max' => $minutes + 5,
+                'basis' => $median === null ? 'formula' : 'recent_orders',
+                'ordersAhead' => $order->queuePosition ? $order->queuePosition - 1 : null,
+            ];
+            // Naive UTC, like every other datetime the API returns.
+            $order->estimatedCompletionAt = Carbon::parse($order->OrderDate, 'UTC')->addMinutes($minutes + 5)->format('Y-m-d H:i:s');
+            return $order;
+        });
+    }
+
+    private function itemCount(Order $order): int
+    {
+        $quantities = $order->items->isNotEmpty()
+            ? $order->items->pluck('ProductQuantity')
+            : collect($order->OrderSnapshot['items'] ?? [])->pluck('quantity');
+        return max(1, (int) $quantities->sum());
     }
 
     // Computes revenue directly from every non-cancelled order in the table,
