@@ -29,7 +29,7 @@ class ProfileApiTest extends TestCase
     {
         $user = User::factory()->create();
         $this->withToken($user->createToken('test')->plainTextToken)->patchJson('/api/auth/me', [
-            'username' => 'Updated Name', 'email' => 'updated@example.com', 'address' => 'New Address', 'password' => 'changed123',
+            'username' => 'Updated Name', 'email' => 'updated@example.com', 'address' => 'New Address', 'password' => 'changed123', 'currentPassword' => 'password',
         ])->assertOk()->assertJsonMissingPath('user.password')->assertJsonMissingPath('user.PasswordHash');
         $this->assertTrue(Hash::check('changed123', $user->fresh()->PasswordHash));
         $this->postJson('/api/auth/login', ['email' => 'updated@example.com', 'password' => 'changed123', 'role' => 'customer'])->assertOk();

@@ -11,9 +11,23 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
+    // Shared by every place a user sets a password (register, reset, change,
+    // profile, admin-created accounts): 8+ characters with letters and numbers.
+    public static function passwordRule(bool $required = true): array
+    {
+        return [$required ? 'required' : 'nullable', 'string', 'max:72', Password::min(8)->letters()->numbers()];
+    }
+
+    // Logs out every other device; the session making the change stays in.
+    private function revokeOtherSessions(Request $request): void
+    {
+        $request->user()->tokens()->where('id', '!=', $request->user()->currentAccessToken()?->id)->delete();
+    }
+
     // Well-known disposable/temporary-inbox domains, blocked at registration so
     // an account can't be thrown away the moment it's inconvenient (spam,
     // abuse, or just skirting the one-account-per-person assumption the rest
@@ -90,7 +104,7 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'email' => ['required', 'email', self::EMAIL_FORMAT_RULE, $this->emailUsernameRule(), 'max:255'],
-            'password' => ['required', 'string', 'min:6', 'max:72'],
+            'password' => self::passwordRule(),
             'userType' => ['required', 'in:student,non_student'],
             'username' => ['required', 'string', 'max:100'],
             'contact' => ['required', 'string', 'regex:/^09\d{9}\z/'],
@@ -173,7 +187,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'email' => ['required', 'email', 'max:255'],
             'token' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:6', 'max:72'],
+            'password' => self::passwordRule(),
         ]);
         $email = strtolower(trim($data['email']));
         $reset = DB::table('password_reset_tokens')->where('email', $email)->first();
@@ -205,6 +219,8 @@ class AuthController extends Controller
         }
 
         $user->update(['PasswordHash' => Hash::make($data['password'])]);
+        // Whoever knew the old password may still be logged in somewhere.
+        $user->tokens()->delete();
         DB::table('password_reset_tokens')->where('email', $email)->delete();
 
         return response()->json(['message' => 'Your password has been reset. You can now sign in.']);
@@ -235,13 +251,14 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'currentPassword' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:8', 'max:72'],
+            'password' => self::passwordRule(),
         ]);
         $user = $request->user();
         if (!password_verify($data['currentPassword'], $user->PasswordHash)) {
             return response()->json(['error' => 'The current password is incorrect.'], 422);
         }
         $user->update(['PasswordHash' => Hash::make($data['password']), 'MustChangePassword' => false]);
+        $this->revokeOtherSessions($request);
         return response()->json(['message' => 'Your password has been changed.']);
     }
 
@@ -257,9 +274,13 @@ class AuthController extends Controller
             'username' => ['required', 'string', 'max:100'],
             'email' => $emailRules,
             'address' => ['required', 'string', 'max:2000'],
-            'password' => ['nullable', 'string', 'min:6', 'max:72'],
-        ], [], ['username' => 'full name']);
+            'password' => self::passwordRule(required: false),
+            'currentPassword' => ['required_with:password', 'nullable', 'string'],
+        ], [], ['username' => 'full name', 'currentPassword' => 'current password']);
         $user = $request->user();
+        if (!empty($data['password']) && !password_verify((string) $data['currentPassword'], $user->PasswordHash)) {
+            return response()->json(['error' => 'The current password is incorrect.'], 422);
+        }
         $email = strtolower(trim($data['email']));
         if ($this->isBlockedEmail($email)) {
             return response()->json(['error' => 'Please use a real, permanent email address.'], 422);
@@ -277,6 +298,7 @@ class AuthController extends Controller
         } catch (UniqueConstraintViolationException $error) {
             return response()->json(['error' => 'email is already registered'], 409);
         }
+        if (!empty($data['password'])) $this->revokeOtherSessions($request);
         return response()->json(['user' => $user->fresh()->profile()]);
     }
 }

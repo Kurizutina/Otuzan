@@ -1,3 +1,4 @@
+import { passwordProblem } from '../../../utils/passwordRules';
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -186,6 +187,11 @@ const AuthPage = ({ mode }) => {
       return;
     }
 
+
+    if (mode === 'register' && passwordProblem(password)) {
+      setMessage({ type: 'error', text: passwordProblem(password) });
+      return;
+    }
 
     /*
      * Password length

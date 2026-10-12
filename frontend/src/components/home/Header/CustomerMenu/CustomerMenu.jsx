@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import './CustomerMenu.css';
 import { syncCustomerOrders } from '../../../../utils/customerProfileSync';
 import { clearSession, getSessionUser } from '../../../../utils/session';
+import { PASSWORD_HINT, passwordProblem } from '../../../../utils/passwordRules';
 
 const PROFILE_KEY = 'otuzanCustomerProfile';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -38,6 +39,7 @@ const CustomerMenu = ({ icon }) => {
     address: '',
     email: '',
     password: '',
+    currentPassword: '',
     ...getSavedProfile()
   }));
 
@@ -85,7 +87,7 @@ const CustomerMenu = ({ icon }) => {
         if (!response.ok) throw new Error(response.status === 401 ? 'Your session expired. Please sign in again.' : result.error || 'Unable to load your profile.');
         if (controller.signal.aborted) return;
         cacheProfile(result.user);
-        setProfile({ ...result.user, password: '' });
+        setProfile({ ...result.user, password: '', currentPassword: '' });
         setProfileLoaded(true);
       } catch (error) {
         if (!controller.signal.aborted) setErrorMessage(error.message === 'Failed to fetch' ? 'Unable to reach the backend. Please try again.' : error.message);
@@ -126,7 +128,14 @@ const CustomerMenu = ({ icon }) => {
       address: profile.address.trim(),
       email: profile.email.trim()
     };
-    if (profile.password) persistedProfile.password = profile.password;
+    if (profile.password) {
+      if (passwordProblem(profile.password)) {
+        setErrorMessage(passwordProblem(profile.password));
+        return;
+      }
+      persistedProfile.password = profile.password;
+      persistedProfile.currentPassword = profile.currentPassword;
+    }
     setIsSaving(true);
     try {
       const response = await fetch(`${API_URL}/api/auth/me`, {
@@ -137,7 +146,7 @@ const CustomerMenu = ({ icon }) => {
       const result = await response.json();
       if (!response.ok) throw new Error(response.status === 401 ? 'Your session expired. Please sign in again.' : result.error || 'Unable to save your profile.');
       cacheProfile(result.user);
-      setProfile({ ...result.user, password: '' });
+      setProfile({ ...result.user, password: '', currentPassword: '' });
       setSavedMessage('Profile updated successfully.');
     } catch (error) {
       setErrorMessage(error.message === 'Failed to fetch' ? 'Unable to reach the backend. Your changes were not saved.' : error.message);
@@ -238,13 +247,23 @@ const CustomerMenu = ({ icon }) => {
                   <span>New password</span>
                   <div>
                     <i className="fa-solid fa-lock" aria-hidden="true" />
-                    <input type={showPassword ? 'text' : 'password'} minLength="6" value={profile.password} onChange={(event) => updateProfile('password', event.target.value)} placeholder="Leave blank to keep current password" />
+                    <input type={showPassword ? 'text' : 'password'} minLength="8" value={profile.password} onChange={(event) => updateProfile('password', event.target.value)} placeholder="Leave blank to keep current password" />
                     <button type="button" onClick={() => setShowPassword((current) => !current)} aria-label={showPassword ? 'Hide password' : 'Show password'}>
                       <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} aria-hidden="true" />
                     </button>
                   </div>
-                  <small>Password must contain at least 6 characters.</small>
+                  <small>{PASSWORD_HINT}</small>
                 </label>
+
+                {profile.password && (
+                  <label className="profile-field profile-password-field">
+                    <span>Current password</span>
+                    <div>
+                      <i className="fa-solid fa-key" aria-hidden="true" />
+                      <input type="password" required value={profile.currentPassword} onChange={(event) => updateProfile('currentPassword', event.target.value)} placeholder="Required to set a new password" autoComplete="current-password" />
+                    </div>
+                  </label>
+                )}
               </fieldset>
 
               {isLoading && <p role="status">Loading profile...</p>}

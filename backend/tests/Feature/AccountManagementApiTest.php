@@ -30,7 +30,7 @@ class AccountManagementApiTest extends TestCase
 
         $rider = $this->withToken($token)->postJson('/api/admin/accounts/driver', [
             'UserName' => 'Rider One', 'Email' => 'RIDER@example.com', 'Contact' => '09999999999',
-            'Address' => 'Manila', 'password' => 'riderpass',
+            'Address' => 'Manila', 'password' => 'riderpass1',
         ])->assertCreated()->assertJsonPath('Role', 'driver')->assertJsonPath('Email', 'rider@example.com')->json();
 
         $this->withToken($token)->getJson('/api/admin/accounts/driver?search=Rider')
@@ -42,7 +42,7 @@ class AccountManagementApiTest extends TestCase
 
         $customer = $this->withToken($token)->postJson('/api/admin/accounts/customer', [
             'UserName' => 'Customer One', 'Email' => 'customer@example.com', 'Contact' => '09777777777',
-            'Address' => 'Pasig', 'password' => 'customerpass',
+            'Address' => 'Pasig', 'password' => 'customerpass1',
         ])->assertCreated()->assertJsonPath('Role', 'customer')->json();
         $this->withToken($token)->deleteJson('/api/admin/accounts/customer/'.$customer['UserID'])->assertOk();
         $this->assertDatabaseMissing('Users', ['UserID' => $customer['UserID']]);

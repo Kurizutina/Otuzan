@@ -48,11 +48,17 @@ class AccountManagementController extends Controller
     {
         $this->ensureAccountRole($role, $account);
         $data = $this->accountData($request, $account, true);
+        $passwordReset = false;
         if (array_key_exists('password', $data)) {
-            if ($data['password'] !== '') $data['PasswordHash'] = Hash::make($data['password']);
+            if ((string) $data['password'] !== '') {
+                $data['PasswordHash'] = Hash::make($data['password']);
+                $passwordReset = true;
+            }
             unset($data['password']);
         }
         $account->update($data);
+        // An admin reset means the old password should no longer get anyone in.
+        if ($passwordReset) $account->tokens()->delete();
         return response()->json($this->accountResponse($account->fresh()));
     }
 
@@ -68,9 +74,7 @@ class AccountManagementController extends Controller
 
     private function accountData(Request $request, ?User $account = null, bool $partial = false): array
     {
-        $passwordRules = $partial
-            ? ['nullable', 'string', 'min:6', 'max:72']
-            : ['required', 'string', 'min:6', 'max:72'];
+        $passwordRules = AuthController::passwordRule(required: !$partial);
         $emailRule = Rule::unique('Users', 'Email');
         if ($account) $emailRule->ignore($account->UserID, 'UserID');
 

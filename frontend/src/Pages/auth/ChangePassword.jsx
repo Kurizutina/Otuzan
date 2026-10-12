@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Logo from '../../components/common/Logo/Logo';
 import { clearSession, getDashboardPath, getSessionUser } from '../../utils/session';
 import '../../components/Auth/Auth.css';
+import { passwordProblem } from '../../utils/passwordRules';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -18,7 +19,7 @@ const ChangePassword = () => {
   const submit = async (event) => {
     event.preventDefault();
     setMessage(null);
-    if (password.length < 8) return setMessage({ type: 'error', text: 'Use at least 8 characters for your new password.' });
+    if (passwordProblem(password)) return setMessage({ type: 'error', text: passwordProblem(password) });
     if (password !== confirmPassword) return setMessage({ type: 'error', text: 'Passwords do not match.' });
     setIsSubmitting(true);
     try {

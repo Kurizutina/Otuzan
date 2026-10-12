@@ -13,14 +13,17 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 
-Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
-Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
-Route::post('/auth/forgot-password', [AuthController::class, 'requestPasswordReset'])->middleware('throttle:5,1');
-Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:10,1');
-Route::get('/catalog', [CatalogController::class, 'publicCatalog']);
-Route::get('/catalog/brands/{brand}/products', [CatalogController::class, 'publicProducts']);
-Route::get('/catalog/best-sellers', [CatalogController::class, 'bestSellers']);
-Route::middleware('auth:sanctum')->group(function () {
+Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:10,1,register');
+Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
+Route::post('/auth/forgot-password', [AuthController::class, 'requestPasswordReset'])->middleware('throttle:5,1,forgot');
+Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:10,1,reset');
+Route::get('/catalog', [CatalogController::class, 'publicCatalog'])->middleware('throttle:300,1,public');
+Route::get('/catalog/brands/{brand}/products', [CatalogController::class, 'publicProducts'])->middleware('throttle:300,1,public');
+Route::get('/catalog/best-sellers', [CatalogController::class, 'bestSellers'])->middleware('throttle:300,1,public');
+// password.changed: a temporary password must be replaced before anything else.
+// throttle:300,1,api: one overall per-user ceiling (the app itself polls chat
+// every 1s and orders/notifications every 2s, about 120 requests a minute).
+Route::middleware(['auth:sanctum', 'password.changed', 'throttle:300,1,api'])->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::patch('/auth/me', [AuthController::class, 'updateProfile']);
     Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
@@ -34,17 +37,17 @@ Route::middleware('auth:sanctum')->group(function () {
         $filename = Str::uuid()->toString().'.'.$file->extension();
         $file->move($directory, $filename);
         return response()->json(['url' => '/uploads/bill-documents/'.$filename, 'name' => $file->getClientOriginalName()], 201);
-    })->middleware('throttle:20,1');
-    Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:20,1');
+    })->middleware('throttle:20,1,uploads');
+    Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:20,1,orders');
     Route::get('/orders', [OrderController::class, 'index']);
-    Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->middleware('throttle:30,1');
+    Route::patch('/orders/{order}/status', [OrderController::class, 'updateStatus'])->middleware('throttle:30,1,status');
     // Customer-side post-delivery report (24h window enforced in the
     // controller); the matching admin dismiss lives in the
     // permission:orders.manage group below.
-    Route::post('/orders/{order}/report', [OrderController::class, 'report'])->middleware('throttle:10,1');
-    Route::post('/payments', [PaymentController::class, 'store'])->middleware('throttle:20,1');
+    Route::post('/orders/{order}/report', [OrderController::class, 'report'])->middleware('throttle:10,1,report');
+    Route::post('/payments', [PaymentController::class, 'store'])->middleware('throttle:20,1,payments');
     Route::get('/orders/{order}/messages', [MessageController::class, 'index']);
-    Route::post('/orders/{order}/messages', [MessageController::class, 'store'])->middleware('throttle:30,1');
+    Route::post('/orders/{order}/messages', [MessageController::class, 'store'])->middleware('throttle:30,1,messages');
     Route::patch('/orders/{order}/messages/read', [MessageController::class, 'markRead']);
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/read', [NotificationController::class, 'markAllRead']);
@@ -53,9 +56,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/revenue', [OrderController::class, 'revenue']);
         Route::get('/admin/customer-segments', [OrderController::class, 'customerSegments']);
         Route::get('/admin/demand-forecast', [OrderController::class, 'demandForecast']);
-        Route::patch('/orders/{order}/assign', [OrderController::class, 'assign'])->middleware('throttle:30,1');
+        Route::patch('/orders/{order}/assign', [OrderController::class, 'assign'])->middleware('throttle:30,1,assign');
         Route::patch('/orders/{order}/report', [OrderController::class, 'clearReport']);
-        Route::patch('/payments/{payment}/status', [PaymentController::class, 'updateStatus'])->middleware('throttle:30,1');
+        Route::patch('/payments/{payment}/status', [PaymentController::class, 'updateStatus'])->middleware('throttle:30,1,payment-status');
     });
     Route::middleware('permission:riders.view')->get('/riders', function (Request $request) {
         return response()->json(['riders' => User::where('Role', 'driver')
@@ -64,24 +67,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('permission:catalog.manage')->prefix('admin/catalog')->group(function () {
         Route::get('/options', [CatalogController::class, 'options']);
         Route::get('/services', [CatalogController::class, 'services']);
-        Route::post('/services', [CatalogController::class, 'storeService'])->middleware('throttle:30,1');
-        Route::put('/services/{service}', [CatalogController::class, 'updateService'])->middleware('throttle:30,1');
-        Route::delete('/services/{service}', [CatalogController::class, 'destroyService'])->middleware('throttle:30,1');
+        Route::post('/services', [CatalogController::class, 'storeService'])->middleware('throttle:30,1,catalog');
+        Route::put('/services/{service}', [CatalogController::class, 'updateService'])->middleware('throttle:30,1,catalog');
+        Route::delete('/services/{service}', [CatalogController::class, 'destroyService'])->middleware('throttle:30,1,catalog');
         Route::get('/brands', [CatalogController::class, 'brands']);
-        Route::post('/brands', [CatalogController::class, 'storeBrand'])->middleware('throttle:30,1');
-        Route::put('/brands/{brand}', [CatalogController::class, 'updateBrand'])->middleware('throttle:30,1');
-        Route::delete('/brands/{brand}', [CatalogController::class, 'destroyBrand'])->middleware('throttle:30,1');
+        Route::post('/brands', [CatalogController::class, 'storeBrand'])->middleware('throttle:30,1,catalog');
+        Route::put('/brands/{brand}', [CatalogController::class, 'updateBrand'])->middleware('throttle:30,1,catalog');
+        Route::delete('/brands/{brand}', [CatalogController::class, 'destroyBrand'])->middleware('throttle:30,1,catalog');
         Route::get('/products', [CatalogController::class, 'products']);
         Route::get('/categories', [CatalogController::class, 'categories']);
-        Route::post('/products', [CatalogController::class, 'storeProduct'])->middleware('throttle:30,1');
-        Route::put('/products/{product}', [CatalogController::class, 'updateProduct'])->middleware('throttle:30,1');
-        Route::delete('/products/{product}', [CatalogController::class, 'destroyProduct'])->middleware('throttle:30,1');
+        Route::post('/products', [CatalogController::class, 'storeProduct'])->middleware('throttle:30,1,catalog');
+        Route::put('/products/{product}', [CatalogController::class, 'updateProduct'])->middleware('throttle:30,1,catalog');
+        Route::delete('/products/{product}', [CatalogController::class, 'destroyProduct'])->middleware('throttle:30,1,catalog');
     });
     Route::middleware('permission:accounts.manage')->prefix('admin/accounts')->group(function () {
         Route::get('/{role}', [AccountManagementController::class, 'index']);
-        Route::post('/{role}', [AccountManagementController::class, 'store'])->middleware('throttle:30,1');
-        Route::put('/{role}/{account}', [AccountManagementController::class, 'update'])->middleware('throttle:30,1');
-        Route::delete('/{role}/{account}', [AccountManagementController::class, 'destroy'])->middleware('throttle:30,1');
+        Route::post('/{role}', [AccountManagementController::class, 'store'])->middleware('throttle:30,1,accounts');
+        Route::put('/{role}/{account}', [AccountManagementController::class, 'update'])->middleware('throttle:30,1,accounts');
+        Route::delete('/{role}/{account}', [AccountManagementController::class, 'destroy'])->middleware('throttle:30,1,accounts');
     });
 });
 Route::get('/health', fn () => response()->json(['status' => 'ok', 'backend' => 'laravel']));
@@ -93,4 +96,4 @@ Route::get('/health/db', function () {
         report($error);
         return response()->json(['status' => 'disconnected'], 503);
     }
-});
+})->middleware('throttle:300,1,public');

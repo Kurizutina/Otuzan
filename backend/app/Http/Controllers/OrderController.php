@@ -15,14 +15,18 @@ use Illuminate\Validation\Rule;
 
 class OrderController extends Controller
 {
+    // Same ceiling as a single Pay Bills amount; also keeps TotalPrice well
+    // inside the decimal(10,2) column.
+    private const MAX_ITEMS_TOTAL = 999999.99;
+
     public function store(Request $request): JsonResponse
     {
         abort_unless($request->user()->Role === 'customer', 403);
         $data = $request->validate([
-            'items' => ['nullable', 'array', 'min:1', 'required_without:customItems'],
+            'items' => ['nullable', 'array', 'min:1', 'max:50', 'required_without:customItems'],
             'items.*.ProductID' => ['required_with:items', 'integer', 'distinct', 'exists:Product,ProductID'],
             'items.*.quantity' => ['required_with:items', 'integer', 'min:1', 'max:99'],
-            'customItems' => ['nullable', 'array', 'min:1', 'required_without:items'],
+            'customItems' => ['nullable', 'array', 'min:1', 'max:50', 'required_without:items'],
             'customItems.*.name' => ['required_with:customItems', 'string', 'max:255'],
             'customItems.*.quantity' => ['required_with:customItems', 'integer', 'min:1', 'max:99'],
             'customItems.*.price' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
@@ -40,10 +44,13 @@ class OrderController extends Controller
                 'max:2000',
                 function ($attribute, $value, $fail) {
                     $locations = ['CLSU Main Campus', 'Bagong Sikat', 'Villa Javier', 'Bukang Liwayway', 'Tobias Ville', 'Villa Isidra', 'PNR Main'];
-                    $normalized = mb_strtolower($value);
+                    // Must START with the zone (the app sends the zone name,
+                    // optionally followed by details) - a zone name buried
+                    // anywhere in free text was accepted before.
+                    $normalized = mb_strtolower(trim($value));
                     $matched = false;
                     foreach ($locations as $loc) {
-                        if (str_contains($normalized, mb_strtolower($loc))) {
+                        if (str_starts_with($normalized, mb_strtolower($loc))) {
                             $matched = true;
                             break;
                         }
@@ -75,6 +82,7 @@ class OrderController extends Controller
             $serviceFee = (float) ($data['serviceFee'] ?? 0);
             if (!empty($data['customItems'])) {
                 $itemsTotal = collect($data['customItems'])->sum(fn ($item) => (float) ($item['price'] ?? 0) * $item['quantity']);
+                abort_if($itemsTotal > self::MAX_ITEMS_TOTAL, 422, 'The order total is too large.');
                 return Order::create([
                     'UserID' => $request->user()->UserID,
                     'TotalPrice' => $itemsTotal + $serviceFee,
@@ -106,6 +114,7 @@ class OrderController extends Controller
                     'ProductQuantity' => $item['quantity'],
                 ];
             }
+            abort_if($itemsTotal > self::MAX_ITEMS_TOTAL, 422, 'The order total is too large.');
 
             $order = Order::create([
                 'UserID' => $request->user()->UserID,
@@ -149,6 +158,7 @@ class OrderController extends Controller
 
     public function indexAll(Request $request): JsonResponse
     {
+        $request->validate(['date' => ['nullable', 'date_format:Y-m-d']]);
         $query = Order::query()->with(['items.product.brand.service', 'user', 'rider', 'payments'])->orderByDesc('OrderDate');
         // Comma-separated so the History tab can ask for delivered+cancelled
         // in one request instead of two - a single status still works

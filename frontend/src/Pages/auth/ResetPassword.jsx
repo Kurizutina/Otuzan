@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import Logo from '../../components/common/Logo/Logo';
 import '../../components/Auth/Auth.css';
+import { passwordProblem } from '../../utils/passwordRules';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
@@ -32,8 +33,8 @@ const ResetPassword = () => {
     event.preventDefault();
     if (isSubmittingRef.current) return;
     setMessage(null);
-    if (password.length < 6) {
-      setMessage({ type: 'error', text: 'Password must be at least 6 characters.' });
+    if (passwordProblem(password)) {
+      setMessage({ type: 'error', text: passwordProblem(password) });
       return;
     }
     if (password !== confirmPassword) {

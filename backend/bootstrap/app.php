@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureAdmin::class,
             'permission' => \App\Http\Middleware\EnsurePermission::class,
+            'password.changed' => \App\Http\Middleware\EnsurePasswordChanged::class,
         ]);
         // This is a pure API backend (routes/web.php has no login page), so an
         // unauthenticated request should never be redirected anywhere. Without
