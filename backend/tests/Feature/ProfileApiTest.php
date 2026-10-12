@@ -17,7 +17,7 @@ class ProfileApiTest extends TestCase
         $other = User::factory()->create();
         $oldHash = $user->PasswordHash;
         $this->withToken($user->createToken('test')->plainTextToken)->patchJson('/api/auth/me', [
-            'username' => 'New Full Name', 'email' => 'NEW.USER@example.com', 'address' => 'New Address',
+            'username' => 'New Full Name', 'email' => 'NEW.USER@example.com', 'address' => 'New Address', 'currentPassword' => 'password',
             'password' => '', 'id' => $other->UserID, 'role' => 'admin',
         ])->assertOk()->assertJsonPath('user.id', $user->UserID)->assertJsonPath('user.role', 'customer');
         $this->assertDatabaseHas('Users', ['UserID' => $user->UserID, 'UserName' => 'New Full Name', 'Email' => 'new.user@example.com', 'Address' => 'New Address']);
@@ -40,7 +40,7 @@ class ProfileApiTest extends TestCase
     {
         $user = User::factory()->create();
         $other = User::factory()->create();
-        $data = ['username' => 'New Name', 'email' => $other->Email, 'address' => 'New Address'];
+        $data = ['username' => 'New Name', 'email' => $other->Email, 'address' => 'New Address', 'currentPassword' => 'password'];
         $this->patchJson('/api/auth/me', $data)->assertUnauthorized();
         $this->withToken($user->createToken('test')->plainTextToken)->patchJson('/api/auth/me', $data)->assertConflict();
         $this->patchJson('/api/auth/me', ['username' => ' ', 'email' => 'invalid', 'address' => ''])->assertUnprocessable();
@@ -56,14 +56,14 @@ class ProfileApiTest extends TestCase
         $token->patchJson('/api/auth/me', ['username' => 'Name', 'email' => 'old_name@example.com', 'address' => 'New Address'])->assertOk();
         $this->assertSame('New Address', $user->fresh()->Address);
         // Changing the email still has to meet the new username rule.
-        $token->patchJson('/api/auth/me', ['username' => 'Name', 'email' => 'new_name@example.com', 'address' => 'New Address'])->assertUnprocessable();
+        $token->patchJson('/api/auth/me', ['username' => 'Name', 'email' => 'new_name@example.com', 'address' => 'New Address', 'currentPassword' => 'password'])->assertUnprocessable();
     }
 
     public function test_profile_update_rejects_undeliverable_and_placeholder_emails(): void
     {
         $user = User::factory()->create();
         $token = $this->withToken($user->createToken('test')->plainTextToken);
-        $base = ['username' => 'Name', 'address' => 'Address'];
+        $base = ['username' => 'Name', 'address' => 'Address', 'currentPassword' => 'password'];
 
         // No dot/real TLD - syntactically "valid" but can never receive mail.
         $token->patchJson('/api/auth/me', [...$base, 'email' => 'a@ce'])->assertUnprocessable();

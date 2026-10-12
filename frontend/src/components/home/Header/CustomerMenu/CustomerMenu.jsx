@@ -42,6 +42,8 @@ const CustomerMenu = ({ icon }) => {
     currentPassword: '',
     ...getSavedProfile()
   }));
+  // Changing the login email needs the current password, like a new password does.
+  const emailChanged = (profile.email || '').trim().toLowerCase() !== (getSavedProfile().email || '').toLowerCase();
 
   useEffect(() => {
     const handlePointerDown = (event) => {
@@ -134,8 +136,8 @@ const CustomerMenu = ({ icon }) => {
         return;
       }
       persistedProfile.password = profile.password;
-      persistedProfile.currentPassword = profile.currentPassword;
     }
+    if (profile.password || emailChanged) persistedProfile.currentPassword = profile.currentPassword;
     setIsSaving(true);
     try {
       const response = await fetch(`${API_URL}/api/auth/me`, {
@@ -255,12 +257,12 @@ const CustomerMenu = ({ icon }) => {
                   <small>{PASSWORD_HINT}</small>
                 </label>
 
-                {profile.password && (
+                {(profile.password || emailChanged) && (
                   <label className="profile-field profile-password-field">
                     <span>Current password</span>
                     <div>
                       <i className="fa-solid fa-key" aria-hidden="true" />
-                      <input type="password" required value={profile.currentPassword} onChange={(event) => updateProfile('currentPassword', event.target.value)} placeholder="Required to set a new password" autoComplete="current-password" />
+                      <input type="password" required value={profile.currentPassword} onChange={(event) => updateProfile('currentPassword', event.target.value)} placeholder="Required to change your email or password" autoComplete="current-password" />
                     </div>
                   </label>
                 )}

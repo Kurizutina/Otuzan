@@ -267,7 +267,8 @@ class AuthController extends Controller
         // Accounts created before the Gmail-style username rule keep working:
         // it is only enforced when the email is actually being changed.
         $emailRules = ['required', 'email', self::EMAIL_FORMAT_RULE, 'max:255'];
-        if (strtolower(trim((string) $request->input('email'))) !== strtolower($request->user()->Email)) {
+        $emailChanged = strtolower(trim((string) $request->input('email'))) !== strtolower($request->user()->Email);
+        if ($emailChanged) {
             $emailRules[] = $this->emailUsernameRule();
         }
         $data = $request->validate([
@@ -275,10 +276,12 @@ class AuthController extends Controller
             'email' => $emailRules,
             'address' => ['required', 'string', 'max:2000'],
             'password' => self::passwordRule(required: false),
-            'currentPassword' => ['required_with:password', 'nullable', 'string'],
+            // The email is the login and the password-reset address, so
+            // changing it needs the current password just like the password does.
+            'currentPassword' => [$emailChanged ? 'required' : 'required_with:password', 'nullable', 'string'],
         ], [], ['username' => 'full name', 'currentPassword' => 'current password']);
         $user = $request->user();
-        if (!empty($data['password']) && !password_verify((string) $data['currentPassword'], $user->PasswordHash)) {
+        if ((!empty($data['password']) || $emailChanged) && !password_verify((string) $data['currentPassword'], $user->PasswordHash)) {
             return response()->json(['error' => 'The current password is incorrect.'], 422);
         }
         $email = strtolower(trim($data['email']));
