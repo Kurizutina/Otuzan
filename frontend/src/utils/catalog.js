@@ -28,6 +28,9 @@ export const apiAssetUrl = (path) => {
     };
     return assetPath.split('/').map(encodeSegment).join('/');
   };
+  // Signed bill-document links from the API: already encoded, and the query
+  // string carries the signature, so they must reach the API untouched.
+  if (path.startsWith('/api/uploads/')) return `${API_BASE_URL}${path}`;
   if (path.startsWith('/uploads/')) return `${API_BASE_URL}${localAssetUrl(path)}`;
 
   // Older payment records stored a full URL using the uploading device's

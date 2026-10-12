@@ -7,6 +7,8 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class PaymentApiTest extends TestCase
@@ -18,6 +20,21 @@ class PaymentApiTest extends TestCase
     private function daytime(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-10-12 10:00', 'Asia/Manila')->setTimezone('UTC'));
+    }
+
+    // Receipt links must point at a document that was actually uploaded
+    // (audit S9), so tests put one on the faked private disk first.
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Storage::fake('local');
+    }
+
+    private function uploadedDocument(string $extension): string
+    {
+        $name = Str::uuid().'.'.$extension;
+        Storage::disk('local')->put('bill-documents/'.$name, 'test document');
+        return '/uploads/bill-documents/'.$name;
     }
 
     private function user(string $role, string $email = null): User
@@ -43,8 +60,8 @@ class PaymentApiTest extends TestCase
             'amount' => 850,
             'method' => 'GCash',
             'deliveryAddress' => 'PNR Main',
-            'billReceiptUrl' => '/uploads/bill.jpg',
-            'transferProofUrl' => '/uploads/proof.jpg',
+            'billReceiptUrl' => $this->uploadedDocument('jpg'),
+            'transferProofUrl' => $this->uploadedDocument('jpg'),
         ])->assertCreated();
 
         $orderId = $response->json('orderId');
@@ -90,7 +107,7 @@ class PaymentApiTest extends TestCase
         $bill = $this->withToken($this->token($customer))->postJson('/api/payments', [
             'establishment' => 'PrimeWater', 'amount' => 500, 'serviceFee' => 75,
             'deliveryAddress' => 'CLSU Main Campus', 'clientOrderId' => 'BILL-TEST',
-            'billReceiptUrl' => '/uploads/bill-documents/bill.pdf',
+            'billReceiptUrl' => $this->uploadedDocument('pdf'),
             'billReceiptType' => 'application/pdf',
         ])->assertCreated();
         $order = \App\Models\Order::findOrFail($bill->json('orderId'));

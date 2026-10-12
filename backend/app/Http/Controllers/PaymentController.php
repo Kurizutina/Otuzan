@@ -9,6 +9,7 @@ use App\Support\DeliveryFee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class PaymentController extends Controller
@@ -22,13 +23,20 @@ class PaymentController extends Controller
     public function store(Request $request): JsonResponse
     {
         abort_unless($request->user()->Role === 'customer', 403);
+        // Receipt/proof links must be documents uploaded through
+        // /api/uploads/bill-documents - not an outside site or a javascript: URL.
+        $uploadedDocument = function ($attribute, $value, $fail) {
+            $valid = preg_match('#^/uploads/bill-documents/([0-9a-f-]{36}\.(?:jpg|jpeg|png|webp|gif|pdf))$#', (string) $value, $match) === 1
+                && Storage::disk('local')->exists('bill-documents/'.$match[1]);
+            if (!$valid) $fail('Please upload the bill documents again.');
+        };
         $data = $request->validate([
             'establishment' => ['required', 'string', 'max:150'],
             'amount' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'method' => ['nullable', 'string', 'max:50'],
-            'billReceiptUrl' => ['nullable', 'string', 'max:500'],
+            'billReceiptUrl' => ['nullable', 'string', 'max:500', $uploadedDocument],
             'billReceiptName' => ['nullable', 'string', 'max:255'],
-            'transferProofUrl' => ['nullable', 'string', 'max:500'],
+            'transferProofUrl' => ['nullable', 'string', 'max:500', $uploadedDocument],
             'transferProofName' => ['nullable', 'string', 'max:255'],
             // Ignored (still accepted from older clients): the server sets the fee.
             'serviceFee' => ['nullable', 'numeric', 'min:0', 'max:500'],

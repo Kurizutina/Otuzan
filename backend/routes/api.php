@@ -9,8 +9,10 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:10,1,register');
@@ -20,6 +22,16 @@ Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->m
 Route::get('/catalog', [CatalogController::class, 'publicCatalog'])->middleware('throttle:300,1,public');
 Route::get('/catalog/brands/{brand}/products', [CatalogController::class, 'publicProducts'])->middleware('throttle:300,1,public');
 Route::get('/catalog/best-sellers', [CatalogController::class, 'bestSellers'])->middleware('throttle:300,1,public');
+// Bill documents are served only through a signed, expiring link (an <img>
+// tag can't send the bearer token); the signature is the authorization.
+// Files uploaded before 10/12 still live in public/ and are found there.
+Route::get('/uploads/bill-documents/{filename}', function (string $filename) {
+    abort_unless(preg_match('/^[0-9a-f-]{36}\.(jpg|jpeg|png|webp|gif|pdf)$/', $filename) === 1, 404);
+    $private = 'bill-documents/'.$filename;
+    $path = Storage::disk('local')->exists($private) ? Storage::disk('local')->path($private) : public_path('uploads/'.$private);
+    abort_unless(is_file($path), 404);
+    return response()->file($path, ['Cache-Control' => 'private, max-age=600']);
+})->name('bill-documents.show')->middleware(['signed:relative', 'throttle:300,1,public']);
 // password.changed: a temporary password must be replaced before anything else.
 // throttle:300,1,api: one overall per-user ceiling (the app itself polls chat
 // every 1s and orders/notifications every 2s, about 120 requests a minute).
@@ -30,12 +42,20 @@ Route::middleware(['auth:sanctum', 'password.changed', 'throttle:300,1,api'])->g
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::post('/uploads/bill-documents', function (Request $request) {
         abort_unless($request->user()->Role === 'customer', 403);
-        $data = $request->validate(['document' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif,pdf', 'max:10240']]);
+        // PHP's own upload_max_filesize can be below the app's 10 MB; above it
+        // the upload never arrives and the only error was "failed to upload".
+        $maxKb = min(10240, intdiv((int) UploadedFile::getMaxFilesize(), 1024));
+        $tooLarge = 'Each bill document must be '.round($maxKb / 1024, 1).' MB or smaller.';
+        $data = $request->validate(
+            ['document' => ['required', 'file', 'mimes:jpg,jpeg,png,webp,gif,pdf', 'max:'.$maxKb]],
+            ['document.max' => $tooLarge, 'document.uploaded' => $tooLarge]
+        );
         $file = $data['document'];
-        $directory = public_path('uploads/bill-documents');
-        if (!is_dir($directory)) mkdir($directory, 0755, true);
+        // Private disk (storage/app/private), not public/: bills are only
+        // reachable through the signed links handed to people who can see
+        // the order (see Payment::paymentNote and the route below).
         $filename = Str::uuid()->toString().'.'.$file->extension();
-        $file->move($directory, $filename);
+        $file->storeAs('bill-documents', $filename, 'local');
         return response()->json(['url' => '/uploads/bill-documents/'.$filename, 'name' => $file->getClientOriginalName()], 201);
     })->middleware('throttle:20,1,uploads');
     Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:20,1,orders');
