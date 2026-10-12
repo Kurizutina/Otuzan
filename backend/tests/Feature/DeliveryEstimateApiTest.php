@@ -107,4 +107,41 @@ class DeliveryEstimateApiTest extends TestCase
         // Countdown target: placement time plus the top of the range (45 min).
         $this->assertSame(Carbon::parse($second->OrderDate)->addMinutes(45)->format('Y-m-d H:i:s'), $mine['estimatedCompletionAt']);
     }
+
+    // The rider accepts an hour after placement, through the real endpoint.
+    private function acceptedAnHourLater(Order $order): void
+    {
+        $rider = User::create([
+            'UserName' => 'Rider', 'Email' => 'estimate.rider@example.com', 'Role' => 'driver',
+            'Contact' => '09123456780', 'PasswordHash' => Hash::make('secret123'),
+        ]);
+        $order->update(['AssignedRiderID' => $rider->UserID]);
+        Carbon::setTestNow(now()->addHour());
+        $this->withToken($rider->createToken('t')->plainTextToken)
+            ->patchJson("/api/orders/{$order->OrderID}/status", ['status' => 'confirmed'])->assertOk();
+        $this->app['auth']->forgetGuards();
+    }
+
+    public function test_the_formula_countdown_starts_when_the_rider_accepts(): void
+    {
+        $order = $this->waitingOrder();
+        $this->acceptedAnHourLater($order);
+
+        $mine = $this->estimateFor($order);
+
+        // The flat formula says nothing about queue time, so a late accept
+        // must not leave the customer looking at "Due now".
+        $this->assertSame('formula', $mine['estimatedMinutes']['basis']);
+        $this->assertSame(now()->addMinutes(45)->format('Y-m-d H:i:s'), $mine['estimatedCompletionAt']);
+    }
+
+    public function test_the_median_countdown_still_starts_at_placement(): void
+    {
+        foreach ([20, 30, 40, 50, 60] as $minutes) $this->delivered($minutes);
+        $order = $this->waitingOrder();
+        $this->acceptedAnHourLater($order);
+
+        // The median is measured from placement and already covers the wait.
+        $this->assertSame(Carbon::parse($order->OrderDate)->addMinutes(45)->format('Y-m-d H:i:s'), $this->estimateFor($order)['estimatedCompletionAt']);
+    }
 }

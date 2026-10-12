@@ -11,7 +11,7 @@ class Order extends Model
     protected $table = 'Orders';
     protected $primaryKey = 'OrderID';
     public $timestamps = false;
-    protected $fillable = ['UserID', 'AssignedRiderID', 'TotalPrice', 'ServiceFee', 'OrderDate', 'DeliveryAddress', 'OrderSnapshot', 'DeliveryStatus', 'StatusUpdatedAt', 'ReportedAt', 'ReportReason'];
+    protected $fillable = ['UserID', 'AssignedRiderID', 'TotalPrice', 'ServiceFee', 'OrderDate', 'DeliveryAddress', 'OrderSnapshot', 'DeliveryStatus', 'StatusUpdatedAt', 'ConfirmedAt', 'ReportedAt', 'ReportReason'];
 
     protected function casts(): array
     {

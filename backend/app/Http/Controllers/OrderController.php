@@ -213,8 +213,13 @@ class OrderController extends Controller
                 'basis' => $median === null ? 'formula' : 'recent_orders',
                 'ordersAhead' => $order->queuePosition ? $order->queuePosition - 1 : null,
             ];
-            // Naive UTC, like every other datetime the API returns.
-            $order->estimatedCompletionAt = Carbon::parse($order->OrderDate, 'UTC')->addMinutes($minutes + 5)->format('Y-m-d H:i:s');
+            // The median already covers the wait for a rider, so it counts
+            // from placement. The flat formula doesn't, so once a rider has
+            // accepted it counts from then - otherwise a late accept shows
+            // "Due now" right away. Naive UTC, like every other datetime the
+            // API returns.
+            $start = $median === null && $order->ConfirmedAt ? $order->ConfirmedAt : $order->OrderDate;
+            $order->estimatedCompletionAt = Carbon::parse($start, 'UTC')->addMinutes($minutes + 5)->format('Y-m-d H:i:s');
             return $order;
         });
     }
@@ -506,7 +511,8 @@ class OrderController extends Controller
         }
 
         $hadRider = !is_null($order->AssignedRiderID);
-        $order->update(['DeliveryStatus' => $data['status'], 'StatusUpdatedAt' => now()]);
+        $order->update(['DeliveryStatus' => $data['status'], 'StatusUpdatedAt' => now()]
+            + ($data['status'] === 'confirmed' ? ['ConfirmedAt' => now()] : []));
         // Any explicit status transition means the order left the raw
         // pre-confirmation line (confirmed, or declined via 'cancelled') -
         // it's either now being actively tracked through its own progress
