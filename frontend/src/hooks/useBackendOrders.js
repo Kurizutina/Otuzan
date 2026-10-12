@@ -111,6 +111,21 @@ const backendEstimate = (backend) => (backend.estimatedMinutes ? {
   estimatedCompletionAt: toUtcIso(backend.estimatedCompletionAt)
 } : {});
 
+const parsePaymentNote = (payment) => {
+  try { return JSON.parse(payment?.PaymentNote || '{}') || {}; } catch { return {}; }
+};
+
+// Bill documents are private: the API's PaymentNote carries signed links
+// (Payment::toArray), while the order this browser stored when placing the
+// bill only has the bare upload path, which the server refuses.
+const signedDocumentLinks = (payment) => {
+  const note = parsePaymentNote(payment);
+  return {
+    ...(note.billReceiptUrl ? { billReceiptUrl: note.billReceiptUrl } : {}),
+    ...(note.transferProofUrl ? { transferProofUrl: note.transferProofUrl } : {})
+  };
+};
+
 // Builds a full local-shaped order straight from a raw backend order - for
 // when the backend knows about an order this browser's own localStorage
 // never saw at all (it was placed from a different device/browser). Without
@@ -132,10 +147,7 @@ export const toLocalOrderShape = (backend) => {
   const snapshot = backend.OrderSnapshot || {};
   const source = isBill ? (payment.PaymentName || 'Bill payment') : (snapshot.source || brand?.BrandName || 'Otu-Zan');
   const section = isBill ? 'bills' : (snapshot.section || (brand?.service?.ServiceType === 'item' ? 'item' : 'food'));
-  let paymentNote = {};
-  if (isBill) {
-    try { paymentNote = JSON.parse(payment.PaymentNote || '{}'); } catch { paymentNote = {}; }
-  }
+  const paymentNote = isBill ? parsePaymentNote(payment) : {};
   return {
     id: `BACKEND-${backend.OrderID}`,
     clientOrderId: snapshot.clientOrderId || null,
@@ -228,7 +240,7 @@ export const applyBackendTruth = (orders, backendOrdersById) => {
       backendPaymentId: payment?.PaymentID ?? order.backendPaymentId ?? null,
       status: backend.DeliveryStatus,
       assignedRider: backend.rider ? { id: backend.rider.UserID, name: backend.rider.UserName } : null,
-      details: payment ? { ...order.details, paymentStatus: payment.PaymentStatus } : order.details,
+      details: payment ? { ...order.details, paymentStatus: payment.PaymentStatus, ...signedDocumentLinks(payment) } : order.details,
       ...(payment ? { serviceFee: Number(backend.ServiceFee) || 0, total: Number(backend.TotalPrice) || 0 } : {}),
       queuePosition: backend.queuePosition ?? null,
       ...backendEstimate(backend),
