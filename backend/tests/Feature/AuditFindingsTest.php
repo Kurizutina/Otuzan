@@ -247,8 +247,18 @@ class AuditFindingsTest extends TestCase
     public function test_R9_reads_are_rate_limited(): void
     {
         $token = $this->token($this->user('customer'));
-        $codes = collect(range(1, 310))->map(fn () => $this->as($token)->getJson('/api/notifications')->status());
-        $this->assertTrue($codes->contains(429), 'Expected a 429 after many back-to-back reads.');
+        $codes = collect(range(1, 601))->map(fn () => $this->as($token)->getJson('/api/notifications')->status());
+        // 600 a minute leaves room for several open tabs (~120/min each).
+        $this->assertFalse($codes->take(600)->contains(429), 'A user with several tabs open was throttled.');
+        $this->assertSame(429, $codes->last(), 'Expected a 429 after 600 back-to-back reads.');
+    }
+
+    public function test_R9_public_routes_allow_a_shared_campus_ip(): void
+    {
+        foreach (['api/catalog', 'api/catalog/best-sellers', 'api/catalog/brands/{brand}/products', 'api/health/db', 'api/uploads/bill-documents/{filename}'] as $uri) {
+            $route = collect(app('router')->getRoutes())->first(fn ($route) => $route->uri() === $uri);
+            $this->assertContains('throttle:1200,1,public', $route->gatherMiddleware(), $uri);
+        }
     }
 
     public function test_R9_malformed_admin_date_filter_is_a_validation_error_not_a_crash(): void

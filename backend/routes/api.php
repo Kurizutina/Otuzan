@@ -19,9 +19,11 @@ Route::post('/auth/register', [AuthController::class, 'register'])->middleware('
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
 Route::post('/auth/forgot-password', [AuthController::class, 'requestPasswordReset'])->middleware('throttle:5,1,forgot');
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:10,1,reset');
-Route::get('/catalog', [CatalogController::class, 'publicCatalog'])->middleware('throttle:300,1,public');
-Route::get('/catalog/brands/{brand}/products', [CatalogController::class, 'publicProducts'])->middleware('throttle:300,1,public');
-Route::get('/catalog/best-sellers', [CatalogController::class, 'bestSellers'])->middleware('throttle:300,1,public');
+// Public routes share one per-IP bucket. A whole campus Wi-Fi shows up as a
+// single IP, so the ceiling is sized for dozens of users, not one browser.
+Route::get('/catalog', [CatalogController::class, 'publicCatalog'])->middleware('throttle:1200,1,public');
+Route::get('/catalog/brands/{brand}/products', [CatalogController::class, 'publicProducts'])->middleware('throttle:1200,1,public');
+Route::get('/catalog/best-sellers', [CatalogController::class, 'bestSellers'])->middleware('throttle:1200,1,public');
 // Bill documents are served only through a signed, expiring link (an <img>
 // tag can't send the bearer token); the signature is the authorization.
 // Files uploaded before 10/12 still live in public/ and are found there.
@@ -31,11 +33,12 @@ Route::get('/uploads/bill-documents/{filename}', function (string $filename) {
     $path = Storage::disk('local')->exists($private) ? Storage::disk('local')->path($private) : public_path('uploads/'.$private);
     abort_unless(is_file($path), 404);
     return response()->file($path, ['Cache-Control' => 'private, max-age=600']);
-})->name('bill-documents.show')->middleware(['signed:relative', 'throttle:300,1,public']);
+})->name('bill-documents.show')->middleware(['signed:relative', 'throttle:1200,1,public']);
 // password.changed: a temporary password must be replaced before anything else.
-// throttle:300,1,api: one overall per-user ceiling (the app itself polls chat
-// every 1s and orders/notifications every 2s, about 120 requests a minute).
-Route::middleware(['auth:sanctum', 'password.changed', 'throttle:300,1,api'])->group(function () {
+// throttle:600,1,api: one overall per-user ceiling (the app itself polls chat
+// every 1s and orders/notifications every 2s, about 120 requests a minute per
+// tab, so 600 leaves room for several tabs).
+Route::middleware(['auth:sanctum', 'password.changed', 'throttle:600,1,api'])->group(function () {
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::patch('/auth/me', [AuthController::class, 'updateProfile']);
     Route::post('/auth/change-password', [AuthController::class, 'changePassword']);
@@ -116,4 +119,4 @@ Route::get('/health/db', function () {
         report($error);
         return response()->json(['status' => 'disconnected'], 503);
     }
-})->middleware('throttle:300,1,public');
+})->middleware('throttle:1200,1,public');
