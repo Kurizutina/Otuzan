@@ -65,6 +65,13 @@ return [
             'api_key' => env('SENDGRID_API_KEY'),
         ],
 
+        // Brevo's HTTPS API (same reason as sendgrid): set MAIL_MAILER=brevo and
+        // BREVO_API_KEY on the host; MAIL_FROM_ADDRESS must be a verified sender.
+        'brevo' => [
+            'transport' => 'brevo',
+            'api_key' => env('BREVO_API_KEY'),
+        ],
+
         'ses' => [
             'transport' => 'ses',
         ],
