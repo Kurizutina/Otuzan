@@ -102,8 +102,12 @@ const AuthForm = ({
 
             <input
               type="tel"
+              inputMode="numeric"
+              maxLength={11}
+              pattern="09[0-9]{9}"
+              title="11 digits, starting with 09"
               className="input-field with-icon"
-              placeholder="Contact number"
+              placeholder="Contact number (09XXXXXXXXX)"
               value={contactNumber}
               onChange={onContactNumberChange}
               required
@@ -146,8 +150,12 @@ const AuthForm = ({
 
             <input
               type="tel"
+              inputMode="numeric"
+              maxLength={11}
+              pattern="09[0-9]{9}"
+              title="11 digits, starting with 09"
               className="input-field with-icon"
-              placeholder="Contact number"
+              placeholder="Contact number (09XXXXXXXXX)"
               value={contactNumber}
               onChange={onContactNumberChange}
               required

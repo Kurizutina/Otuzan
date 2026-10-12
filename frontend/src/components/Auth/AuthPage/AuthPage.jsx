@@ -10,8 +10,10 @@ import { syncCustomerOrders } from '../../../utils/customerProfileSync';
 import { getDashboardPath, setSession } from '../../../utils/session';
 
 import {
+  sanitizeContactNumber,
   validateAccessCode,
-  validateAdditionalFields
+  validateAdditionalFields,
+  validateEmailUsername
 } from '../../../utils/validation';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -158,6 +160,11 @@ const AuthPage = ({ mode }) => {
         setMessage
       )
     ) {
+      return;
+    }
+
+
+    if (mode === 'register' && !validateEmailUsername(email, setMessage)) {
       return;
     }
 
@@ -347,7 +354,7 @@ const AuthPage = ({ mode }) => {
       }
 
       onContactNumberChange={(e) =>
-        setContactNumber(e.target.value)
+        setContactNumber(sanitizeContactNumber(e.target.value))
       }
 
       onUserTypeChange={(e) =>

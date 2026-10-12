@@ -24,11 +24,11 @@ class AuthApiTest extends TestCase
     public function test_registration_persists_account_address_and_returns_compatible_token(): void
     {
         $data = [
-            'username' => 'Ana Cruz', 'email' => 'ANA@example.com', 'password' => 'secret123',
+            'username' => 'Ana Cruz', 'email' => 'ANA.CRUZ@example.com', 'password' => 'secret123',
             'contact' => '09123456789', 'address' => '12 Mabini Street', 'userType' => 'non_student',
         ];
         $response = $this->withHeader('Origin', 'http://localhost:3000')->postJson('/api/auth/register', $data)
-            ->assertCreated()->assertJsonPath('user.email', 'ana@example.com')
+            ->assertCreated()->assertJsonPath('user.email', 'ana.cruz@example.com')
             ->assertJsonPath('user.address', '12 Mabini Street')
             ->assertHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
         $user = User::firstOrFail();
@@ -67,11 +67,44 @@ class AuthApiTest extends TestCase
         $this->postJson('/api/auth/register', [...$data, 'email' => 'someone@test.com'])
             ->assertUnprocessable()->assertJsonStructure(['error']);
         // Placeholder local-part at an otherwise-real provider.
-        $this->postJson('/api/auth/register', [...$data, 'email' => 'asdf@gmail.com'])
+        $this->postJson('/api/auth/register', [...$data, 'email' => 'asdfasdf@gmail.com'])
             ->assertUnprocessable();
         // RFC 2606 reserved domains stay allowed - this suite's own fixtures use them.
-        $this->postJson('/api/auth/register', [...$data, 'email' => 'faker@example.com'])
+        $this->postJson('/api/auth/register', [...$data, 'email' => 'faker.one@example.com'])
             ->assertCreated();
+    }
+
+    public function test_registration_requires_an_eleven_digit_09_contact_number(): void
+    {
+        $data = [
+            'username' => 'Ana Cruz', 'email' => 'ana.cruz@example.com', 'password' => 'secret123',
+            'userType' => 'non_student',
+        ];
+
+        foreach (['0912345678', '091234567890', '19123456789', '0912345678a', '0912-345-6789', '+639123456789'] as $contact) {
+            $this->postJson('/api/auth/register', [...$data, 'contact' => $contact])
+                ->assertUnprocessable()->assertJsonPath('error', 'Contact number must be exactly 11 digits and start with 09.');
+        }
+        $this->assertDatabaseMissing('Users', ['Email' => 'ana.cruz@example.com']);
+
+        $this->postJson('/api/auth/register', [...$data, 'contact' => '09123456789'])->assertCreated();
+    }
+
+    public function test_registration_enforces_gmail_style_email_usernames(): void
+    {
+        $data = [
+            'username' => 'Ana Cruz', 'password' => 'secret123',
+            'contact' => '09123456789', 'userType' => 'non_student',
+        ];
+
+        foreach (['ana_cruz@example.com', 'ana+cruz@example.com', 'ana-cruz@example.com', 'ana!cruz@example.com',
+            '.anacruz@example.com', 'anacruz.@example.com', 'ana..cruz@example.com', 'ana@example.com',
+            str_repeat('a', 31).'@example.com'] as $email) {
+            $this->postJson('/api/auth/register', [...$data, 'email' => $email])->assertUnprocessable();
+        }
+        $this->assertDatabaseCount('Users', 0);
+
+        $this->postJson('/api/auth/register', [...$data, 'email' => 'ana.cruz.2024@example.com'])->assertCreated();
     }
 
     public function test_login_accepts_migrated_bcryptjs_password_hash_and_uses_the_account_role(): void

@@ -17,10 +17,10 @@ class ProfileApiTest extends TestCase
         $other = User::factory()->create();
         $oldHash = $user->PasswordHash;
         $this->withToken($user->createToken('test')->plainTextToken)->patchJson('/api/auth/me', [
-            'username' => 'New Full Name', 'email' => 'NEW@example.com', 'address' => 'New Address',
+            'username' => 'New Full Name', 'email' => 'NEW.USER@example.com', 'address' => 'New Address',
             'password' => '', 'id' => $other->UserID, 'role' => 'admin',
         ])->assertOk()->assertJsonPath('user.id', $user->UserID)->assertJsonPath('user.role', 'customer');
-        $this->assertDatabaseHas('Users', ['UserID' => $user->UserID, 'UserName' => 'New Full Name', 'Email' => 'new@example.com', 'Address' => 'New Address']);
+        $this->assertDatabaseHas('Users', ['UserID' => $user->UserID, 'UserName' => 'New Full Name', 'Email' => 'new.user@example.com', 'Address' => 'New Address']);
         $this->assertSame($oldHash, $user->fresh()->PasswordHash);
         $this->assertSame($other->UserName, $other->fresh()->UserName);
     }
@@ -48,6 +48,17 @@ class ProfileApiTest extends TestCase
         $this->assertSame($user->Email, $user->fresh()->Email);
     }
 
+    public function test_accounts_with_a_legacy_email_can_still_edit_their_profile(): void
+    {
+        $user = User::factory()->create(['Email' => 'old_name@example.com']);
+        $token = $this->withToken($user->createToken('test')->plainTextToken);
+
+        $token->patchJson('/api/auth/me', ['username' => 'Name', 'email' => 'old_name@example.com', 'address' => 'New Address'])->assertOk();
+        $this->assertSame('New Address', $user->fresh()->Address);
+        // Changing the email still has to meet the new username rule.
+        $token->patchJson('/api/auth/me', ['username' => 'Name', 'email' => 'new_name@example.com', 'address' => 'New Address'])->assertUnprocessable();
+    }
+
     public function test_profile_update_rejects_undeliverable_and_placeholder_emails(): void
     {
         $user = User::factory()->create();
@@ -58,10 +69,12 @@ class ProfileApiTest extends TestCase
         $token->patchJson('/api/auth/me', [...$base, 'email' => 'a@ce'])->assertUnprocessable();
         // Same placeholder blocklist as registration.
         $token->patchJson('/api/auth/me', [...$base, 'email' => 'someone@mailinator.com'])->assertUnprocessable();
-        $token->patchJson('/api/auth/me', [...$base, 'email' => 'test@test.com'])->assertUnprocessable();
+        $token->patchJson('/api/auth/me', [...$base, 'email' => 'testing@test.com'])->assertUnprocessable();
+        // Gmail-style username rules apply to profile edits too.
+        $token->patchJson('/api/auth/me', [...$base, 'email' => 'real_person@example.com'])->assertUnprocessable();
         $this->assertSame($user->Email, $user->fresh()->Email);
 
-        $token->patchJson('/api/auth/me', [...$base, 'email' => 'real@example.com'])->assertOk();
-        $this->assertSame('real@example.com', $user->fresh()->Email);
+        $token->patchJson('/api/auth/me', [...$base, 'email' => 'real.person@example.com'])->assertOk();
+        $this->assertSame('real.person@example.com', $user->fresh()->Email);
     }
 }

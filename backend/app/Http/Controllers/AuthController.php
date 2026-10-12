@@ -64,6 +64,18 @@ class AuthController extends Controller
     // can't be edited into an address nobody can actually reach.
     private const EMAIL_FORMAT_RULE = 'regex:/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/i';
 
+    // Gmail's username rules, applied to every provider: 6-30 characters,
+    // letters/digits/periods only, no leading, trailing or consecutive periods.
+    private function emailUsernameRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) {
+            $local = strstr((string) $value, '@', true);
+            if ($local === false || !preg_match('/^(?!\.)(?!.*\.\.)[a-z0-9.]{6,30}(?<!\.)$/i', $local)) {
+                $fail('Email username must be 6-30 characters using only letters, numbers and periods (no leading, trailing or repeated periods).');
+            }
+        };
+    }
+
     private function isBlockedEmail(string $email): bool
     {
         $domain = strtolower(substr(strrchr($email, '@'), 1));
@@ -77,13 +89,13 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'email' => ['required', 'email', self::EMAIL_FORMAT_RULE, 'max:255'],
+            'email' => ['required', 'email', self::EMAIL_FORMAT_RULE, $this->emailUsernameRule(), 'max:255'],
             'password' => ['required', 'string', 'min:6', 'max:72'],
             'userType' => ['required', 'in:student,non_student'],
             'username' => ['required', 'string', 'max:100'],
-            'contact' => ['required', 'string', 'max:50'],
+            'contact' => ['required', 'string', 'regex:/^09\d{9}\z/'],
             'address' => ['nullable', 'string', 'max:2000'],
-        ]);
+        ], ['contact.regex' => 'Contact number must be exactly 11 digits and start with 09.']);
         $email = strtolower(trim($data['email']));
         if ($this->isBlockedEmail($email)) {
             return response()->json(['error' => 'Please use a real, permanent email address to register.'], 422);
@@ -235,9 +247,15 @@ class AuthController extends Controller
 
     public function updateProfile(Request $request): JsonResponse
     {
+        // Accounts created before the Gmail-style username rule keep working:
+        // it is only enforced when the email is actually being changed.
+        $emailRules = ['required', 'email', self::EMAIL_FORMAT_RULE, 'max:255'];
+        if (strtolower(trim((string) $request->input('email'))) !== strtolower($request->user()->Email)) {
+            $emailRules[] = $this->emailUsernameRule();
+        }
         $data = $request->validate([
             'username' => ['required', 'string', 'max:100'],
-            'email' => ['required', 'email', self::EMAIL_FORMAT_RULE, 'max:255'],
+            'email' => $emailRules,
             'address' => ['required', 'string', 'max:2000'],
             'password' => ['nullable', 'string', 'min:6', 'max:72'],
         ], [], ['username' => 'full name']);
