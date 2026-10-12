@@ -31,7 +31,7 @@ class AuditFindingsTest extends TestCase
         parent::tearDown();
     }
 
-    private function user(string $role, string $email = null, array $extra = []): User
+    private function user(string $role, ?string $email = null, array $extra = []): User
     {
         return User::create(array_merge([
             'UserName' => ucfirst($role).' Person', 'Email' => $email ?? $role.uniqid().'@example.com', 'Role' => $role,

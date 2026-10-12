@@ -80,7 +80,8 @@ const OrderCard = ({ order, onAssign, onStatus, riders }) => {
   const [selectedRiderId, setSelectedRiderId] = useState(assignedRiderId);
   useEffect(() => setSelectedRiderId(assignedRiderId), [assignedRiderId]);
   const selectedRider = riders.find((rider) => String(rider.id) === selectedRiderId);
-  const canAssign = !['delivered', 'cancelled'].includes(order.status);
+  // The server only allows (re)assigning while the order waits for a rider.
+  const canAssign = order.status === 'pending_rider';
   const nextAction = {
     confirmed: ['preparing', 'Start preparing'],
     preparing: ['out_for_delivery', 'Out for delivery'],

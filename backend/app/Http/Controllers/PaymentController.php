@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Support\DeliveryFee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,15 +30,26 @@ class PaymentController extends Controller
             'billReceiptName' => ['nullable', 'string', 'max:255'],
             'transferProofUrl' => ['nullable', 'string', 'max:500'],
             'transferProofName' => ['nullable', 'string', 'max:255'],
+            // Ignored (still accepted from older clients): the server sets the fee.
             'serviceFee' => ['nullable', 'numeric', 'min:0', 'max:500'],
-            'deliveryAddress' => ['nullable', 'string', 'max:2000'],
+            'deliveryAddress' => ['required', 'string', 'max:2000', function ($attribute, $value, $fail) {
+                if (!DeliveryFee::zoneFor($value)) $fail('Delivery address must be within a supported delivery location.');
+            }],
             'clientOrderId' => ['nullable', 'string', 'max:100'],
             'billReceiptType' => ['nullable', 'string', 'max:100'],
             'transferProofType' => ['nullable', 'string', 'max:100'],
         ]);
 
+        // Same double-submit guard as OrderController::store, scoped to this customer.
+        if (!empty($data['clientOrderId'])) {
+            $existing = Payment::whereHas('order', fn ($orders) => $orders
+                ->where('UserID', $request->user()->UserID)
+                ->whereJsonContains('OrderSnapshot->clientOrderId', $data['clientOrderId']))->first();
+            if ($existing) return response()->json(['payment' => $existing, 'orderId' => $existing->OrderID], 200);
+        }
+
         $payment = DB::transaction(function () use ($data, $request) {
-            $serviceFee = (float) ($data['serviceFee'] ?? 0);
+            $serviceFee = DeliveryFee::for($request->user()->UserType);
             $order = Order::create([
                 'UserID' => $request->user()->UserID,
                 'TotalPrice' => ($data['amount'] ?? 0) + $serviceFee,
@@ -73,6 +85,7 @@ class PaymentController extends Controller
     public function updateStatus(Request $request, Payment $payment): JsonResponse
     {
         abort_if(in_array($payment->PaymentStatus, ['verified', 'rejected'], true), 422, 'This payment is already finalized.');
+        abort_if($payment->order->DeliveryStatus === 'cancelled', 422, 'This order was cancelled; its payment cannot be reviewed.');
 
         $data = $request->validate([
             'status' => ['required', Rule::in(['verified', 'rejected'])],

@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Queue;
 use App\Models\User;
+use App\Support\DeliveryFee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -18,6 +19,14 @@ class OrderController extends Controller
     // Same ceiling as a single Pay Bills amount; also keeps TotalPrice well
     // inside the decimal(10,2) column.
     private const MAX_ITEMS_TOTAL = 999999.99;
+
+    // Columns embedded in order responses (see index()).
+    private const CUSTOMER_FIELDS = 'UserID,UserName,Contact,Address,Email';
+    private const CUSTOMER_FIELDS_FOR_RIDER = 'UserID,UserName,Contact,Address';
+    private const RIDER_FIELDS = 'UserID,UserName';
+
+    // Forward steps after a rider accepts; one step at a time, never backwards.
+    private const NEXT_STEP = ['confirmed' => 'preparing', 'preparing' => 'out_for_delivery', 'out_for_delivery' => 'delivered'];
 
     public function store(Request $request): JsonResponse
     {
@@ -43,23 +52,13 @@ class OrderController extends Controller
                 'string',
                 'max:2000',
                 function ($attribute, $value, $fail) {
-                    $locations = ['CLSU Main Campus', 'Bagong Sikat', 'Villa Javier', 'Bukang Liwayway', 'Tobias Ville', 'Villa Isidra', 'PNR Main'];
-                    // Must START with the zone (the app sends the zone name,
-                    // optionally followed by details) - a zone name buried
-                    // anywhere in free text was accepted before.
-                    $normalized = mb_strtolower(trim($value));
-                    $matched = false;
-                    foreach ($locations as $loc) {
-                        if (str_starts_with($normalized, mb_strtolower($loc))) {
-                            $matched = true;
-                            break;
-                        }
-                    }
-                    if (!$matched) {
+                    if (!DeliveryFee::zoneFor($value)) {
                         $fail('Delivery address must be within a supported delivery location (CLSU Main Campus, Bagong Sikat, Villa Javier, Bukang Liwayway, Tobias Ville, Villa Isidra, PNR Main).');
                     }
                 },
             ],
+            // Still accepted from older clients, but ignored: the fee is
+            // computed below from the customer's type and the Manila time.
             'serviceFee' => ['nullable', 'numeric', 'min:0', 'max:500'],
         ]);
 
@@ -79,7 +78,7 @@ class OrderController extends Controller
 
         $order = DB::transaction(function () use ($data, $request) {
 
-            $serviceFee = (float) ($data['serviceFee'] ?? 0);
+            $serviceFee = DeliveryFee::for($request->user()->UserType);
             if (!empty($data['customItems'])) {
                 $itemsTotal = collect($data['customItems'])->sum(fn ($item) => (float) ($item['price'] ?? 0) * $item['quantity']);
                 abort_if($itemsTotal > self::MAX_ITEMS_TOTAL, 422, 'The order total is too large.');
@@ -142,7 +141,11 @@ class OrderController extends Controller
         // a rider synthesizes a full order card from when this order was
         // placed on a customer's own device and never touched this rider's
         // local storage (see useBackendOrders.js's toLocalOrderShape).
-        $query = Order::query()->with(['items.product.brand.service', 'payments', 'user', 'rider'])->orderByDesc('OrderDate');
+        // Only the fields the screens read (useBackendOrders' toLocalOrderShape):
+        // a rider sees who and where to deliver to, never the customer's
+        // email or account flags; a customer sees only the rider's name.
+        $customerFields = $user->Role === 'driver' ? self::CUSTOMER_FIELDS_FOR_RIDER : self::CUSTOMER_FIELDS;
+        $query = Order::query()->with(['items.product.brand.service', 'payments', 'user:'.$customerFields, 'rider:'.self::RIDER_FIELDS])->orderByDesc('OrderDate');
 
         if ($user->Role === 'driver') {
             $query->where('AssignedRiderID', $user->UserID);
@@ -159,7 +162,7 @@ class OrderController extends Controller
     public function indexAll(Request $request): JsonResponse
     {
         $request->validate(['date' => ['nullable', 'date_format:Y-m-d']]);
-        $query = Order::query()->with(['items.product.brand.service', 'user', 'rider', 'payments'])->orderByDesc('OrderDate');
+        $query = Order::query()->with(['items.product.brand.service', 'user:'.self::CUSTOMER_FIELDS, 'rider:'.self::RIDER_FIELDS, 'payments'])->orderByDesc('OrderDate');
         // Comma-separated so the History tab can ask for delivered+cancelled
         // in one request instead of two - a single status still works
         // exactly as before.
@@ -442,14 +445,24 @@ class OrderController extends Controller
         abort_unless($isAdmin || $isAssignedRider || $isOwningCustomerCancelling, 403);
         abort_if(in_array($order->DeliveryStatus, ['delivered', 'cancelled'], true), 422, 'This order is already finalized.');
 
+        // Allowed transitions (10/12 audit): only the assigned rider accepts
+        // or declines a pending order; after that, rider or admin move it
+        // forward exactly one step; the admin may cancel any open order.
+        // A rider can no longer cancel an order they already accepted.
+        $current = $order->DeliveryStatus;
+        $isOneStepForward = (self::NEXT_STEP[$current] ?? null) === $data['status'];
+        $allowed = $isOwningCustomerCancelling
+            || ($isAssignedRider && ($current === 'pending_rider' ? in_array($data['status'], ['confirmed', 'cancelled'], true) : $isOneStepForward))
+            || ($isAdmin && ($data['status'] === 'cancelled' || $isOneStepForward));
+        abort_unless($allowed, 422, 'That status change is not allowed for this order.');
+
         // A rider declining an order they were assigned but have not accepted
         // is not the end of the customer's order: it goes back to the admin's
-        // unassigned pool so another rider can take it. Cancelling after
-        // acceptance (the UI doesn't offer it) stays a real cancellation.
+        // unassigned pool so another rider can take it.
         if ($isAssignedRider && $data['status'] === 'cancelled' && $order->DeliveryStatus === 'pending_rider') {
             $order->update(['DeliveryStatus' => 'pending_rider', 'AssignedRiderID' => null, 'StatusUpdatedAt' => now()]);
             $this->notifyCustomer($order, 'Rider cancelled your order', "Order #{$order->OrderID} was cancelled by the rider. We're reassigning it to another rider and will notify you once one accepts.", 'status');
-            return response()->json(['order' => $order->fresh(['items.product', 'rider'])]);
+            return response()->json(['order' => $order->fresh(['items.product', 'rider:'.self::RIDER_FIELDS])]);
         }
 
         $hadRider = !is_null($order->AssignedRiderID);
@@ -462,7 +475,7 @@ class OrderController extends Controller
         // harmless no-op instead of re-touching an already-closed entry.
         $order->queueEntries()->where('QueueStatus', 'waiting')->update(['QueueStatus' => 'done']);
         $this->notifyStatusChange($order, $data['status'], $isAdmin ? ($hadRider ? 'admin' : 'admin_no_rider') : null);
-        return response()->json(['order' => $order->fresh(['items.product', 'rider'])]);
+        return response()->json(['order' => $order->fresh(['items.product', 'rider:'.self::RIDER_FIELDS])]);
     }
 
     private function notifyCustomer(Order $order, string $title, string $message, string $type): void
@@ -538,6 +551,10 @@ class OrderController extends Controller
             'riderId' => ['nullable', 'integer', 'exists:Users,UserID'],
         ]);
 
+        // Once a rider has accepted (or the order is finished) the assignment
+        // is locked; swapping or removing the rider mid-delivery orphaned it.
+        abort_unless($order->DeliveryStatus === 'pending_rider', 422, 'A rider can only be assigned or removed while the order is waiting for one.');
+
         $riderId = $data['riderId'] ?? null;
         if ($riderId) {
             $rider = User::find($riderId);
@@ -554,7 +571,7 @@ class OrderController extends Controller
         // the customer that the order was accepted.
         $order->update(['AssignedRiderID' => $riderId]);
 
-        return response()->json(['order' => $order->fresh(['items.product', 'rider'])]);
+        return response()->json(['order' => $order->fresh(['items.product', 'rider:'.self::RIDER_FIELDS])]);
     }
 
     // Post-delivery report window (9/29): the owning customer has 24h after

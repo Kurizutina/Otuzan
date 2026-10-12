@@ -277,8 +277,10 @@ test('backend orders show the customer\'s registered address, with the delivery 
   expect(toLocalOrderShape({ ...backend, user: { ...backend.user, Address: null } })).toMatchObject({ customerAddress: 'Bagong Sikat' });
 });
 
-test('admin explicitly assigns an active delivery and only the selected rider sees it', async () => {
-  localStorage.setItem('otuzanCustomerActivity', JSON.stringify({ orders: [{ ...order, status: 'out_for_delivery' }], cart: [], notifications: [] }));
+// Assignment is only possible while the order waits for a rider (audit S4);
+// the rider's own progress then takes it the rest of the way.
+test('admin explicitly assigns a waiting order and only the selected rider sees it', async () => {
+  localStorage.setItem('otuzanCustomerActivity', JSON.stringify({ orders: [{ ...order, status: 'pending_rider' }], cart: [], notifications: [] }));
   signIn(1, 'admin');
   const admin = render(<CustomerActivityProvider><DeliveryAdminDashboard /></CustomerActivityProvider>);
   await screen.findByRole('option', { name: 'Rider Seven' });
@@ -288,12 +290,14 @@ test('admin explicitly assigns an active delivery and only the selected rider se
   fireEvent.change(screen.getByLabelText('Assigned rider'), { target: { value: '7' } });
   expect(saved().orders[0].assignedRider).toBeUndefined();
   fireEvent.click(screen.getByRole('button', { name: 'Assign' }));
-  expect(saved().orders[0]).toMatchObject({ status: 'out_for_delivery', assignedRider: { id: 7, name: 'Rider Seven' } });
+  expect(saved().orders[0]).toMatchObject({ status: 'pending_rider', assignedRider: { id: 7, name: 'Rider Seven' } });
   expect(screen.getByRole('status')).toHaveTextContent('Assigned to Rider Seven');
   expect(screen.getByRole('button', { name: 'Assign' })).toBeDisabled();
   fireEvent.change(screen.getByLabelText('Assigned rider'), { target: { value: '8' } });
   expect(saved().orders[0].assignedRider.id).toBe(7);
   admin.unmount();
+  // Rider Seven accepted and is on the way.
+  localStorage.setItem('otuzanCustomerActivity', JSON.stringify({ ...saved(), orders: [{ ...saved().orders[0], status: 'out_for_delivery' }] }));
   signIn(8, 'driver');
   const other = render(<CustomerActivityProvider><RiderDashboard /></CustomerActivityProvider>);
   expect(screen.queryByText('ORD-1')).not.toBeInTheDocument();

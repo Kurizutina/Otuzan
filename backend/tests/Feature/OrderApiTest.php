@@ -38,8 +38,16 @@ class OrderApiTest extends TestCase
         ]);
     }
 
+    // Fee-dependent tests pin the clock to Manila daytime: the server adds a
+    // night surcharge after 18:00/20:00 (App\Support\DeliveryFee).
+    private function daytime(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-12 10:00', 'Asia/Manila')->setTimezone('UTC'));
+    }
+
     public function test_customer_can_place_an_order_with_server_computed_total(): void
     {
+        $this->daytime();
         $customer = $this->user('customer');
         $product = $this->product(price: 150);
 
@@ -51,18 +59,20 @@ class OrderApiTest extends TestCase
             // endpoint doesn't even accept those fields, so there's nothing to trust.
         ])->assertCreated();
 
-        $this->assertEquals(450, (float) $response->json('order.TotalPrice'));
+        // 3 x 150 from the catalog plus the server's 75 zone fee.
+        $this->assertEquals(525, (float) $response->json('order.TotalPrice'));
         $this->assertSame('ORD-browser-123', $response->json('order.OrderSnapshot.clientOrderId'));
         $this->assertDatabaseHas('Orders', [
-            'UserID' => $customer->UserID, 'TotalPrice' => 450, 'DeliveryStatus' => 'pending_rider',
+            'UserID' => $customer->UserID, 'TotalPrice' => 525, 'DeliveryStatus' => 'pending_rider',
         ]);
         $this->assertDatabaseHas('OrderItem', [
             'ProductID' => $product->ProductID, 'OrderItemPrice' => 150, 'ProductQuantity' => 3,
         ]);
     }
 
-    public function test_order_persists_service_fee_and_adds_it_to_total(): void
+    public function test_order_charges_the_server_fee_not_the_client_fee_and_adds_it_to_total(): void
     {
+        $this->daytime();
         $customer = $this->user('customer');
         $product = $this->product(price: 150);
 
@@ -72,14 +82,15 @@ class OrderApiTest extends TestCase
             'serviceFee' => 112.5,
         ])->assertCreated();
 
-        $this->assertEquals(412.5, (float) $response->json('order.TotalPrice'));
+        $this->assertEquals(375, (float) $response->json('order.TotalPrice'));
         $this->assertDatabaseHas('Orders', [
-            'UserID' => $customer->UserID, 'TotalPrice' => 412.5, 'ServiceFee' => 112.5,
+            'UserID' => $customer->UserID, 'TotalPrice' => 375, 'ServiceFee' => 75,
         ]);
     }
 
     public function test_custom_menu_order_is_persisted_and_its_service_fee_is_revenue(): void
     {
+        $this->daytime();
         $customer = $this->user('customer');
         $admin = $this->user('admin');
 
@@ -390,9 +401,10 @@ class OrderApiTest extends TestCase
 
         $admin = $this->user('admin');
         $this->app['auth']->forgetGuards();
+        // The admin may move an accepted order one step forward (never jump to delivered).
         $this->withToken($this->token($admin))->patchJson("/api/orders/{$order->OrderID}/status", [
-            'status' => 'delivered',
-        ])->assertOk()->assertJsonPath('order.DeliveryStatus', 'delivered');
+            'status' => 'preparing',
+        ])->assertOk()->assertJsonPath('order.DeliveryStatus', 'preparing');
     }
 
     public function test_customer_can_cancel_only_before_a_rider_is_selected(): void
@@ -459,7 +471,9 @@ class OrderApiTest extends TestCase
         ])->assertOk()->assertJsonPath('order.DeliveryStatus', 'confirmed');
     }
 
-    public function test_rider_cancelling_after_accepting_is_a_real_cancellation(): void
+    // Changed 10/12 (audit S4): after accepting, a rider can only move the
+    // order forward; cancelling an accepted order is the admin's call.
+    public function test_rider_cannot_cancel_after_accepting(): void
     {
         $customer = $this->user('customer');
         $rider = $this->user('driver');
@@ -470,7 +484,8 @@ class OrderApiTest extends TestCase
 
         $this->withToken($this->token($rider))->patchJson("/api/orders/{$order->OrderID}/status", [
             'status' => 'cancelled',
-        ])->assertOk()->assertJsonPath('order.DeliveryStatus', 'cancelled')->assertJsonPath('order.AssignedRiderID', $rider->UserID);
+        ])->assertStatus(422);
+        $this->assertDatabaseHas('Orders', ['OrderID' => $order->OrderID, 'DeliveryStatus' => 'out_for_delivery', 'AssignedRiderID' => $rider->UserID]);
     }
 
     public function test_admin_cancelling_an_unassigned_order_says_no_riders_are_available(): void
@@ -812,12 +827,14 @@ class OrderApiTest extends TestCase
         $driver = $this->user('driver');
         $customer = $this->user('customer');
 
-        $order1 = Order::create(['UserID' => $customer->UserID, 'TotalPrice' => 100, 'ServiceFee' => 75, 'DeliveryStatus' => 'confirmed', 'DeliveryAddress' => 'CLSU Main Campus']);
+        $order1 = Order::create(['UserID' => $customer->UserID, 'TotalPrice' => 100, 'ServiceFee' => 75, 'DeliveryStatus' => 'pending_rider', 'DeliveryAddress' => 'CLSU Main Campus']);
         $order2 = Order::create(['UserID' => $customer->UserID, 'TotalPrice' => 200, 'ServiceFee' => 75, 'DeliveryStatus' => 'pending_rider', 'DeliveryAddress' => 'CLSU Main Campus']);
 
         $this->withToken($this->token($admin))->patchJson("/api/orders/{$order1->OrderID}/assign", [
             'riderId' => $driver->UserID,
         ])->assertOk();
+        // The rider accepts order1, so it is an active delivery.
+        $order1->update(['DeliveryStatus' => 'confirmed']);
 
         $this->app['auth']->forgetGuards();
 

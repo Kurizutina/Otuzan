@@ -24,10 +24,19 @@ export const findDeliveryLocation = (selection, address = '') => {
 
 export const deliveryRateLabel = (location) => location ? `₱${location.fee}` : 'Select location';
 
+// The cutoff is business time (Asia/Manila), whatever timezone the device is
+// set to - the server (App\Support\DeliveryFee) charges by the same clock.
+const manilaMinutes = (time) => {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Manila', hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+  }).formatToParts(time);
+  const part = (type) => Number(parts.find((item) => item.type === type)?.value) || 0;
+  return (part('hour') * 60) + part('minute');
+};
+
 export const calculateDeliveryFee = (location, customerType = 'non_student', orderTime = new Date()) => {
   const type = CUSTOMER_TYPES.find((item) => item.id === customerType) || CUSTOMER_TYPES[1];
-  const time = new Date(orderTime);
-  const minutes = (time.getHours() * 60) + time.getMinutes();
+  const minutes = manilaMinutes(new Date(orderTime));
   const baseFee = Number(location?.fee) || 0;
   const surchargeApplied = baseFee > 0 && minutes > type.cutoffMinutes;
   const surcharge = surchargeApplied ? baseFee * 0.5 : 0;

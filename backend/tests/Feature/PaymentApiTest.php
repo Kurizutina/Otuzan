@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Payment;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
@@ -11,6 +12,13 @@ use Tests\TestCase;
 class PaymentApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    // Fee-dependent tests pin the clock to Manila daytime: the server adds a
+    // night surcharge after 18:00/20:00 (App\Support\DeliveryFee).
+    private function daytime(): void
+    {
+        Carbon::setTestNow(Carbon::parse('2026-10-12 10:00', 'Asia/Manila')->setTimezone('UTC'));
+    }
 
     private function user(string $role, string $email = null): User
     {
@@ -27,19 +35,22 @@ class PaymentApiTest extends TestCase
 
     public function test_customer_can_submit_a_bill_payment_and_it_creates_an_order_and_payment(): void
     {
+        $this->daytime();
         $customer = $this->user('customer');
 
         $response = $this->withToken($this->token($customer))->postJson('/api/payments', [
             'establishment' => 'NEECO 2',
             'amount' => 850,
             'method' => 'GCash',
+            'deliveryAddress' => 'PNR Main',
             'billReceiptUrl' => '/uploads/bill.jpg',
             'transferProofUrl' => '/uploads/proof.jpg',
         ])->assertCreated();
 
         $orderId = $response->json('orderId');
         $this->assertDatabaseHas('Orders', [
-            'OrderID' => $orderId, 'UserID' => $customer->UserID, 'TotalPrice' => 850,
+            // 850 bill plus the server's 75 zone fee.
+            'OrderID' => $orderId, 'UserID' => $customer->UserID, 'TotalPrice' => 925,
             'DeliveryStatus' => 'pending_rider',
         ]);
         $this->assertDatabaseHas('Payment', [
@@ -48,12 +59,13 @@ class PaymentApiTest extends TestCase
         ]);
     }
 
-    public function test_payment_persists_service_fee_and_adds_it_to_the_order_total(): void
+    public function test_payment_charges_the_server_fee_and_adds_it_to_the_order_total(): void
     {
+        $this->daytime();
         $customer = $this->user('customer');
 
         $response = $this->withToken($this->token($customer))->postJson('/api/payments', [
-            'establishment' => 'PrimeWater', 'amount' => 500, 'serviceFee' => 75,
+            'establishment' => 'PrimeWater', 'amount' => 500, 'serviceFee' => 0, 'deliveryAddress' => 'Bagong Sikat',
         ])->assertCreated();
 
         $this->assertDatabaseHas('Orders', [
@@ -72,6 +84,7 @@ class PaymentApiTest extends TestCase
 
     public function test_bill_fee_reaches_revenue_and_completed_history_across_pages(): void
     {
+        $this->daytime();
         $customer = $this->user('customer');
         $admin = $this->user('admin');
         $bill = $this->withToken($this->token($customer))->postJson('/api/payments', [
@@ -81,7 +94,8 @@ class PaymentApiTest extends TestCase
             'billReceiptType' => 'application/pdf',
         ])->assertCreated();
         $order = \App\Models\Order::findOrFail($bill->json('orderId'));
-        $order->update(['OrderDate' => now()->subDay()]);
+        // The rider has taken the bill out; the admin may mark that last step.
+        $order->update(['OrderDate' => now()->subDay(), 'DeliveryStatus' => 'out_for_delivery']);
         $this->assertSame('CLSU Main Campus', $order->DeliveryAddress);
         $this->assertSame('BILL-TEST', $order->OrderSnapshot['clientOrderId']);
 
