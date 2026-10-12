@@ -145,7 +145,8 @@ const LiveOrdersTab = ({ orders, onAssign, onStatus, riders }) => {
       </label>
     </div>
     <div className="admin-order-columns">{visibleColumns.map((column) => {
-      const list = orders.filter(column.matches);
+      const list = orders.filter(column.matches)
+        .sort((a, b) => (Date.parse(b.createdAt) || 0) - (Date.parse(a.createdAt) || 0));
       return <section className="admin-order-column" key={column.key}>
         <div className="admin-column-heading"><i style={{ background: column.color }} /><h2>{column.label}</h2><span>{list.length}</span></div>
         <div className="admin-column-list">{list.length

@@ -424,6 +424,86 @@ class OrderApiTest extends TestCase
         ]);
     }
 
+    private function lastNotificationMessage(User $customer): array
+    {
+        return json_decode(Notification::where('UserID', $customer->UserID)->latest('NotificationID')->firstOrFail()->NotificationMessage, true);
+    }
+
+    public function test_rider_cancelling_releases_the_order_back_to_admin_and_tells_the_customer(): void
+    {
+        $customer = $this->user('customer');
+        $rider = $this->user('driver');
+        $order = Order::create([
+            'UserID' => $customer->UserID, 'AssignedRiderID' => $rider->UserID,
+            'TotalPrice' => 100, 'DeliveryStatus' => 'pending_rider',
+        ]);
+
+        $this->withToken($this->token($rider))->patchJson("/api/orders/{$order->OrderID}/status", [
+            'status' => 'cancelled',
+        ])->assertOk()->assertJsonPath('order.DeliveryStatus', 'pending_rider')->assertJsonPath('order.AssignedRiderID', null);
+
+        $this->assertDatabaseHas('Orders', ['OrderID' => $order->OrderID, 'AssignedRiderID' => null, 'DeliveryStatus' => 'pending_rider']);
+        $message = $this->lastNotificationMessage($customer);
+        $this->assertSame('Rider cancelled your order', $message['title']);
+        $this->assertStringContainsString('reassigning it to another rider', $message['message']);
+
+        // Back in the unassigned pool: the admin can hand it to a different rider, who can then accept it.
+        $other = $this->user('driver', 'other.rider@example.com');
+        $this->app['auth']->forgetGuards();
+        $this->withToken($this->token($this->user('admin')))->patchJson("/api/orders/{$order->OrderID}/assign", [
+            'riderId' => $other->UserID,
+        ])->assertOk()->assertJsonPath('order.AssignedRiderID', $other->UserID);
+        $this->app['auth']->forgetGuards();
+        $this->withToken($this->token($other))->patchJson("/api/orders/{$order->OrderID}/status", [
+            'status' => 'confirmed',
+        ])->assertOk()->assertJsonPath('order.DeliveryStatus', 'confirmed');
+    }
+
+    public function test_rider_cancelling_after_accepting_is_a_real_cancellation(): void
+    {
+        $customer = $this->user('customer');
+        $rider = $this->user('driver');
+        $order = Order::create([
+            'UserID' => $customer->UserID, 'AssignedRiderID' => $rider->UserID,
+            'TotalPrice' => 100, 'DeliveryStatus' => 'out_for_delivery',
+        ]);
+
+        $this->withToken($this->token($rider))->patchJson("/api/orders/{$order->OrderID}/status", [
+            'status' => 'cancelled',
+        ])->assertOk()->assertJsonPath('order.DeliveryStatus', 'cancelled')->assertJsonPath('order.AssignedRiderID', $rider->UserID);
+    }
+
+    public function test_admin_cancelling_an_unassigned_order_says_no_riders_are_available(): void
+    {
+        $customer = $this->user('customer');
+        $order = Order::create(['UserID' => $customer->UserID, 'TotalPrice' => 100, 'DeliveryStatus' => 'pending_rider']);
+
+        $this->withToken($this->token($this->user('admin')))->patchJson("/api/orders/{$order->OrderID}/status", [
+            'status' => 'cancelled',
+        ])->assertOk()->assertJsonPath('order.DeliveryStatus', 'cancelled');
+
+        $message = $this->lastNotificationMessage($customer);
+        $this->assertSame('Order cancelled', $message['title']);
+        $this->assertSame("Order #{$order->OrderID} was cancelled by the admin because no riders are currently available.", $message['message']);
+    }
+
+    public function test_admin_cancelling_an_assigned_order_does_not_claim_no_riders_are_available(): void
+    {
+        $customer = $this->user('customer');
+        $rider = $this->user('driver');
+        $order = Order::create([
+            'UserID' => $customer->UserID, 'AssignedRiderID' => $rider->UserID,
+            'TotalPrice' => 100, 'DeliveryStatus' => 'pending_rider',
+        ]);
+
+        $this->withToken($this->token($this->user('admin')))->patchJson("/api/orders/{$order->OrderID}/status", [
+            'status' => 'cancelled',
+        ])->assertOk()->assertJsonPath('order.DeliveryStatus', 'cancelled');
+
+        $this->assertStringNotContainsString('no riders', $this->lastNotificationMessage($customer)['message']);
+        $this->assertStringContainsString('cancelled by the admin', $this->lastNotificationMessage($customer)['message']);
+    }
+
     public function test_unassigned_rider_and_customer_cannot_update_status(): void
     {
         $customer = $this->user('customer');

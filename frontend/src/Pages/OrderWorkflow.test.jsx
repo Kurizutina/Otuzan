@@ -256,6 +256,27 @@ test('a backend-rejected order sync warns instead of disappearing silently', asy
   }
 });
 
+test('admin Live Orders list the most recently placed order first, regardless of stored or updated order', async () => {
+  const older = { ...order, id: 'ORD-OLD', createdAt: '2026-09-14T01:00:00Z', updatedAt: '2026-09-14T09:00:00Z' };
+  const newer = { ...order, id: 'ORD-NEW', createdAt: '2026-09-14T05:00:00Z', updatedAt: '2026-09-14T05:00:00Z' };
+  localStorage.setItem('otuzanCustomerActivity', JSON.stringify({ orders: [older, newer], cart: [], notifications: [] }));
+  signIn(1, 'admin');
+  render(<CustomerActivityProvider><DeliveryAdminDashboard /></CustomerActivityProvider>);
+  await screen.findAllByRole('option', { name: 'Rider Seven' });
+  const ids = screen.getAllByText(/^ORD-(OLD|NEW)$/).map((node) => node.textContent);
+  expect(ids).toEqual(['ORD-NEW', 'ORD-OLD']);
+});
+
+test('backend orders show the customer\'s registered address, with the delivery area kept separately', () => {
+  const backend = {
+    OrderID: 9, UserID: 5, DeliveryAddress: 'Bagong Sikat', DeliveryStatus: 'pending_rider', OrderDate: '2026-09-14 01:00:00',
+    user: { UserID: 5, UserName: 'Ana Cruz', Contact: '09123456789', Address: '12 Mabini Street, Muñoz' },
+    items: [], payments: [], rider: null
+  };
+  expect(toLocalOrderShape(backend)).toMatchObject({ customerAddress: '12 Mabini Street, Muñoz', deliveryLocationName: 'Bagong Sikat' });
+  expect(toLocalOrderShape({ ...backend, user: { ...backend.user, Address: null } })).toMatchObject({ customerAddress: 'Bagong Sikat' });
+});
+
 test('admin explicitly assigns an active delivery and only the selected rider sees it', async () => {
   localStorage.setItem('otuzanCustomerActivity', JSON.stringify({ orders: [{ ...order, status: 'out_for_delivery' }], cart: [], notifications: [] }));
   signIn(1, 'admin');
@@ -295,6 +316,27 @@ test('admin can cancel an assigned order', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Decline' }));
   expect(saved().orders[0]).toMatchObject({ status: 'cancelled', assignedRider: { id: 7 } });
   expect(saved().notifications[0].message).not.toContain('by the rider');
+});
+
+test('admin cancelling an order with no rider tells the customer no riders are available', async () => {
+  signIn(1, 'admin');
+  render(<CustomerActivityProvider><DeliveryAdminDashboard /></CustomerActivityProvider>);
+  await screen.findByRole('option', { name: 'Rider Seven' });
+  fireEvent.click(screen.getByRole('button', { name: 'Decline' }));
+  expect(saved().orders[0].status).toBe('cancelled');
+  expect(saved().notifications[0].message).toContain('cancelled by the admin because no riders are currently available');
+});
+
+test('a rider cancelling hands the order back to the admin unassigned and notifies the customer', () => {
+  signIn(7, 'driver');
+  localStorage.setItem('otuzanCustomerActivity', JSON.stringify({
+    orders: [{ ...order, customerId: 42, assignedRider: { id: 7, name: 'Rider Seven' } }], cart: [], notifications: []
+  }));
+  render(<CustomerActivityProvider><RiderDashboard /></CustomerActivityProvider>);
+  fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+  expect(saved().orders[0]).toMatchObject({ status: 'pending_rider', assignedRider: null });
+  expect(saved().notifications[0].title).toBe('Rider cancelled your order');
+  expect(saved().notifications[0].message).toContain('reassigning it to another rider');
 });
 
 test('rider sees only own assignments and loses an open order when reassigned in another tab', () => {

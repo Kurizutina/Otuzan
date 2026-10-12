@@ -120,7 +120,11 @@ const RiderDashboard = () => {
 
   const updateProgress = (order, status) => {
     setProgressError('');
-    setOptimisticStatuses((current) => ({ ...current, [order.id]: status }));
+    // A pending order that the rider cancels is released, not cancelled: it
+    // returns to the admin and may come back to this rider, so don't pin a
+    // 'cancelled' status to it.
+    const releasesOrder = status === 'cancelled' && order.status === 'pending_rider';
+    if (!releasesOrder) setOptimisticStatuses((current) => ({ ...current, [order.id]: status }));
     const queue = statusQueuesRef.current.get(order.id) || { running: false, steps: [] };
     queue.steps.push({ order, status, previousStatus: order.status });
     statusQueuesRef.current.set(order.id, queue);

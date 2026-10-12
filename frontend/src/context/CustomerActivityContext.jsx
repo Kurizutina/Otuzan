@@ -647,9 +647,20 @@ export const CustomerActivityProvider = ({ children }) => {
     if (user?.role !== 'admin' && !(user?.role === 'driver' && isAssignedTo(currentOrder, user)) && !isOwningCustomerCancelling) return Promise.resolve(false);
     if (['delivered', 'cancelled'].includes(currentOrder.status)) return Promise.resolve(false);
 
+    // Mirrors OrderController::updateStatus: a rider cancelling hands the
+    // order back to the admin unassigned instead of ending it.
+    const isRiderRelease = user?.role === 'driver' && status === 'cancelled' && currentOrder.status === 'pending_rider';
+    const hadRider = Boolean(currentOrder.assignedRider);
+    const cancelledMessage = user?.role === 'admin'
+      ? (hadRider
+        ? `${currentOrder.label} was cancelled by the admin.`
+        : `${currentOrder.label} was cancelled by the admin because no riders are currently available.`)
+      : `${currentOrder.label} was cancelled.`;
     const statusContent = {
       confirmed: ['Order accepted', `${currentOrder.label} was accepted. Tracking is now available.`],
-      cancelled: ['Order cancelled', `${currentOrder.label} was cancelled.`],
+      cancelled: isRiderRelease
+        ? ['Rider cancelled your order', `${currentOrder.label} was cancelled by the rider. We're reassigning it to another rider.`]
+        : ['Order cancelled', cancelledMessage],
       preparing: ['Order is being prepared', `${currentOrder.label} is now being prepared.`],
       out_for_delivery: ['Order is out for delivery', `${currentOrder.label} is on the way.`],
       delivered: ['Order delivered', `${currentOrder.label} has been delivered.`]
@@ -666,9 +677,12 @@ export const CustomerActivityProvider = ({ children }) => {
         Date.parse(updatedAt) + (estimatedWaitMinutes * 60 * 1000)
       ).toISOString()
     } : {};
-    const nextOrders = currentOrders.map((order) => order.id === orderId
-      ? { ...order, status, updatedAt, estimatedWaitMinutes, ...confirmationTiming }
-      : order);
+    const nextOrders = currentOrders.map((order) => {
+      if (order.id !== orderId) return order;
+      return isRiderRelease
+        ? { ...order, status: 'pending_rider', assignedRider: null, updatedAt }
+        : { ...order, status, updatedAt, estimatedWaitMinutes, ...confirmationTiming };
+    });
     // Backend-linked orders get their notification from the server now
     // (OrderController::notifyStatusChange, step 1g) - the customer's own
     // poll picks it up regardless of which device they're on. Creating one
@@ -684,7 +698,7 @@ export const CustomerActivityProvider = ({ children }) => {
         message: content[1],
         createdAt: updatedAt,
         read: false,
-        type: status === 'cancelled' ? 'cancelled' : 'status'
+        type: status === 'cancelled' && !isRiderRelease ? 'cancelled' : 'status'
       }, ...(latest.notifications || notifications)];
     updateAll(latest.cart || cart, nextOrders, nextNotifications);
     // Local-only legacy orders have no server request to wait for. Backend
@@ -699,11 +713,15 @@ export const CustomerActivityProvider = ({ children }) => {
       // requested status already cached, short-circuits as a no-op, and can
       // never reach the backend again.
       const latestAfterFailure = loadActivity();
-      const restoredOrders = (latestAfterFailure.orders || []).map((order) => (
-        order.id === orderId && order.status === status
+      const restoredOrders = (latestAfterFailure.orders || []).map((order) => {
+        if (order.id !== orderId) return order;
+        if (isRiderRelease && !order.assignedRider) {
+          return { ...order, assignedRider: currentOrder.assignedRider, updatedAt: new Date().toISOString() };
+        }
+        return order.status === status
           ? { ...order, status: currentOrder.status, updatedAt: new Date().toISOString() }
-          : order
-      ));
+          : order;
+      });
       updateAll(latestAfterFailure.cart || cart, restoredOrders, latestAfterFailure.notifications || notifications);
       return false;
     });

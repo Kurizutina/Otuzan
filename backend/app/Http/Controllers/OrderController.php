@@ -432,6 +432,17 @@ class OrderController extends Controller
         abort_unless($isAdmin || $isAssignedRider || $isOwningCustomerCancelling, 403);
         abort_if(in_array($order->DeliveryStatus, ['delivered', 'cancelled'], true), 422, 'This order is already finalized.');
 
+        // A rider declining an order they were assigned but have not accepted
+        // is not the end of the customer's order: it goes back to the admin's
+        // unassigned pool so another rider can take it. Cancelling after
+        // acceptance (the UI doesn't offer it) stays a real cancellation.
+        if ($isAssignedRider && $data['status'] === 'cancelled' && $order->DeliveryStatus === 'pending_rider') {
+            $order->update(['DeliveryStatus' => 'pending_rider', 'AssignedRiderID' => null, 'StatusUpdatedAt' => now()]);
+            $this->notifyCustomer($order, 'Rider cancelled your order', "Order #{$order->OrderID} was cancelled by the rider. We're reassigning it to another rider and will notify you once one accepts.", 'status');
+            return response()->json(['order' => $order->fresh(['items.product', 'rider'])]);
+        }
+
+        $hadRider = !is_null($order->AssignedRiderID);
         $order->update(['DeliveryStatus' => $data['status'], 'StatusUpdatedAt' => now()]);
         // Any explicit status transition means the order left the raw
         // pre-confirmation line (confirmed, or declined via 'cancelled') -
@@ -440,8 +451,23 @@ class OrderController extends Controller
         // later transition on the same order (confirmed -> preparing) is a
         // harmless no-op instead of re-touching an already-closed entry.
         $order->queueEntries()->where('QueueStatus', 'waiting')->update(['QueueStatus' => 'done']);
-        $this->notifyStatusChange($order, $data['status']);
+        $this->notifyStatusChange($order, $data['status'], $isAdmin ? ($hadRider ? 'admin' : 'admin_no_rider') : null);
         return response()->json(['order' => $order->fresh(['items.product', 'rider'])]);
+    }
+
+    private function notifyCustomer(Order $order, string $title, string $message, string $type): void
+    {
+        Notification::create([
+            'UserID' => $order->UserID,
+            'NotificationMessage' => json_encode([
+                'title' => $title,
+                'message' => $message,
+                'type' => $type,
+                'orderId' => $order->OrderID,
+            ]),
+            'NotificationSeen' => false,
+            'NotificationDate' => now(),
+        ]);
     }
 
     // Admin/rider actions were the actual gap step 1g exists to close: an
@@ -450,11 +476,15 @@ class OrderController extends Controller
     // needs to find out regardless of which device they check from next -
     // a notification written only to the acting admin/rider's own browser
     // (the old localStorage-only behavior) never reached them at all.
-    private function notifyStatusChange(Order $order, string $status): void
+    private function notifyStatusChange(Order $order, string $status, ?string $cancelledBy = null): void
     {
         $content = [
             'confirmed' => ['Order accepted', 'was accepted. Tracking is now available.'],
-            'cancelled' => ['Order cancelled', 'was cancelled.'],
+            'cancelled' => ['Order cancelled', match ($cancelledBy) {
+                'admin_no_rider' => 'was cancelled by the admin because no riders are currently available.',
+                'admin' => 'was cancelled by the admin.',
+                default => 'was cancelled.',
+            }],
             'preparing' => ['Order is being prepared', 'is now being prepared.'],
             'out_for_delivery' => ['Order is out for delivery', 'is on the way.'],
             'delivered' => ['Order delivered', 'has been delivered.'],
@@ -479,17 +509,12 @@ class OrderController extends Controller
               . ($riderContact !== '' ? " Contact: {$riderContact}." : '')
             : '';
 
-        Notification::create([
-            'UserID' => $order->UserID,
-            'NotificationMessage' => json_encode([
-                'title' => $content[0],
-                'message' => "Order #{$order->OrderID} {$content[1]}{$riderSuffix}",
-                'type' => $status === 'cancelled' ? 'cancelled' : 'status',
-                'orderId' => $order->OrderID,
-            ]),
-            'NotificationSeen' => false,
-            'NotificationDate' => now(),
-        ]);
+        $this->notifyCustomer(
+            $order,
+            $content[0],
+            "Order #{$order->OrderID} {$content[1]}{$riderSuffix}",
+            $status === 'cancelled' ? 'cancelled' : 'status'
+        );
     }
 
     private function firstName(string $fullName): string
