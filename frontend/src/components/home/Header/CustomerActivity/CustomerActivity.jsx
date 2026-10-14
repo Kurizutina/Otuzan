@@ -15,6 +15,7 @@ import { applyBackendTruth, useBackendOrders } from '../../../../hooks/useBacken
 import { toLocalNotificationShape, useBackendNotifications } from '../../../../hooks/useBackendNotifications';
 import OrderChat from '../../../common/OrderChat/OrderChat';
 import { happenedTodayInManila, remainsVisibleToday } from '../../../../utils/backendTime';
+import { orderNumber } from '../../../../utils/orderNumber';
 
 const NotificationIcon = () => (
   <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -268,7 +269,7 @@ const CustomerActivity = () => {
                   {activityTab === 'orders' && (
                     orders.length ? orders.map((order) => (
                       <article className={`order-tracking-card order-status-${order.status}`} key={order.id}>
-                        <div className="tracking-card-heading"><div><small>{order.id}</small><strong>{getOrderDisplayLabel(order)}</strong></div><span>{statusLabels[order.status] || 'Confirmed'}</span></div>
+                        <div className="tracking-card-heading"><div><small>{orderNumber(order)}</small><strong>{getOrderDisplayLabel(order)}</strong></div><span>{statusLabels[order.status] || 'Confirmed'}</span></div>
                         <p>{order.source} · {new Date(order.createdAt).toLocaleString()}</p>
 
                         {!!order.items?.length && (
@@ -288,14 +289,25 @@ const CustomerActivity = () => {
                           </div>
                         )}
 
-                        {order.status === 'pending_rider' && (
+                        {order.status === 'pending_rider' && !order.assignedRider && (
                           <button
                             type="button"
                             className="order-cancel-button"
-                            onClick={() => window.confirm('Cancel this order? This cannot be undone.') && updateOrderStatus(order, 'cancelled')}
+                            onClick={() => {
+                              if (!window.confirm('Cancel this order? This cannot be undone.')) return;
+                              // The server refuses a cancel it no longer allows
+                              // (a rider was just assigned, or it's already
+                              // finalized); say so instead of doing nothing.
+                              Promise.resolve(updateOrderStatus(order, 'cancelled')).then((ok) => {
+                                if (ok === false) window.alert('This order could not be cancelled. A rider may have just been assigned - message the rider in the chat if you still need to cancel.');
+                              });
+                            }}
                           >
                             Cancel Order
                           </button>
+                        )}
+                        {order.status === 'pending_rider' && order.assignedRider && (
+                          <p className="order-cancel-note">A rider has been assigned, so this order can no longer be cancelled here. Message the rider in the chat below if you need to cancel.</p>
                         )}
 
                         {order.status === 'cancelled' && (

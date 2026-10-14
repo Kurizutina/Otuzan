@@ -5,6 +5,7 @@ import './DeliveryAdminDashboard.css';
 import OrderCustomerDetails from '../../components/common/OrderCustomerDetails/OrderCustomerDetails';
 import { apiAssetUrl, broadcastCatalogChanged, catalogImageUrl } from '../../utils/catalog';
 import { logout as endSession } from '../../utils/session';
+import { orderNumber } from '../../utils/orderNumber';
 import { applyBackendTruth, ORDERS_CHANGED_EVENT, ORDER_PROGRESS_CHANGED_STORAGE_KEY, toLocalOrderShape, useBackendOrders } from '../../hooks/useBackendOrders';
 
 const SERVICE_META = {
@@ -91,7 +92,7 @@ const OrderCard = ({ order, onAssign, onStatus, riders }) => {
   return (
     <article className="admin-order-card" style={{ '--service-color': meta.color }}>
       <div className="admin-order-card-heading">
-        <div><strong>{order.id}</strong><small>{new Date(order.createdAt).toLocaleString()}</small></div>
+        <div><strong>{orderNumber(order)}</strong><small>{new Date(order.createdAt).toLocaleString()}</small></div>
         <ServiceBadge service={service} />
       </div>
       <OrderCustomerDetails order={order} />
@@ -290,7 +291,7 @@ const HistoryTab = () => {
   return <section>
     <DateFilter value={dateFilter} onChange={setDateFilter} today={today} />
     <div className="admin-filter-row">{['all', 'food', 'item', 'bills'].map((key) => <button className={serviceFilter === key ? 'active' : ''} type="button" onClick={() => setServiceFilter(key)} key={key}>{key === 'all' ? 'All services' : SERVICE_META[key].label}</button>)}</div>
-    <div className="admin-table-wrap"><table><thead><tr><th>Order ID</th><th>Service</th><th>Customer</th><th>Date</th><th>Total</th><th>Rider</th><th>Status</th></tr></thead><tbody>{rows.map((order) => <tr key={order.id}><td>{order.id}</td><td><ServiceBadge service={inferService(order)} /></td><td><OrderCustomerDetails order={order} /></td><td>{new Date(order.createdAt).toLocaleString()}</td><td>{formatCurrency(getOrderTotal(order))}</td><td>{order.assignedRider?.name || '—'}</td><td><span className={`admin-history-status ${order.status}`}>{order.status}</span>{order.reportedAt && <button type="button" className="admin-history-report" title={order.reportReason || 'Customer reported a problem'} onClick={() => dismissReport(order)}><i className="fa-solid fa-flag" aria-hidden="true" /> Reported · Dismiss</button>}</td></tr>)}</tbody></table>{!rows.length && <div className="admin-table-empty">{dateFilter ? 'No completed transactions on that date.' : 'No completed transactions on this page.'}</div>}</div>
+    <div className="admin-table-wrap"><table><thead><tr><th>Order ID</th><th>Service</th><th>Customer</th><th>Date</th><th>Total</th><th>Rider</th><th>Status</th></tr></thead><tbody>{rows.map((order) => <tr key={order.id}><td>{orderNumber(order)}</td><td><ServiceBadge service={inferService(order)} /></td><td><OrderCustomerDetails order={order} /></td><td>{new Date(order.createdAt).toLocaleString()}</td><td>{formatCurrency(getOrderTotal(order))}</td><td>{order.assignedRider?.name || '—'}</td><td><span className={`admin-history-status ${order.status}`}>{order.status}</span>{order.reportedAt && <button type="button" className="admin-history-report" title={order.reportReason || 'Customer reported a problem'} onClick={() => dismissReport(order)}><i className="fa-solid fa-flag" aria-hidden="true" /> Reported · Dismiss</button>}</td></tr>)}</tbody></table>{!rows.length && <div className="admin-table-empty">{dateFilter ? 'No completed transactions on that date.' : 'No completed transactions on this page.'}</div>}</div>
     {result.last_page > 1 && (
       <div className="admin-pagination">
         <button type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>← Previous</button>
@@ -631,7 +632,7 @@ const PaymentsTab = ({ orders, onPaymentStatus }) => {
   return <>
     {paymentError && <p role="alert">{paymentError}</p>}
     <div className="admin-payment-list">{payments.map((order) => <article className="admin-payment-card" key={order.id}>
-      <div><small>{order.id}</small><OrderCustomerDetails order={order} /><span>{order.source}</span></div>
+      <div><small>{orderNumber(order)}</small><OrderCustomerDetails order={order} /><span>{order.source}</span></div>
       <div><small>Uploaded bill</small><strong>{order.details?.billReceiptName || 'No receipt uploaded'}</strong><span>{order.details?.transferProofName || 'No transfer proof'}</span><div className="admin-payment-documents">{documentButton(order.details?.billReceiptUrl, order.details?.billReceiptName, order.details?.billReceiptType, 'receipt')}{documentButton(order.details?.transferProofUrl, order.details?.transferProofName, order.details?.transferProofType, 'proof of payment')}</div></div>
       <span className={`admin-payment-status ${order.details?.paymentStatus || 'pending'}`}>{order.details?.paymentStatus || 'pending'}</span>
       {(order.details?.paymentStatus || 'pending') === 'pending' && <div className="admin-payment-actions"><button className="primary" type="button" disabled={savingPayment !== null} onClick={() => savePayment(order, 'verified')}>Verify</button><button type="button" disabled={savingPayment !== null} onClick={() => savePayment(order, 'rejected')}>Reject</button></div>}

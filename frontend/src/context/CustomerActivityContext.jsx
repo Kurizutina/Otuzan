@@ -609,7 +609,7 @@ export const CustomerActivityProvider = ({ children }) => {
       orderId: order.id,
       customerId: order.customerId,
       title: 'Order request sent',
-      message: `Your ${order.source} order ${order.id} is waiting for a rider.`,
+      message: `Your ${order.source} order is waiting for a rider.`,
       createdAt: order.createdAt,
       read: false
     }));

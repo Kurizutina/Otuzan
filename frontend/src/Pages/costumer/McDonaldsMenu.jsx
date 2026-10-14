@@ -352,6 +352,15 @@ export const RestaurantMenu = ({
     window.setTimeout(() => setNotice(''), 2600);
   };
 
+  // Below 761px the cart is a slide-up drawer and above 1050px a sticky
+  // sidebar; in between it sits at the bottom of the page in normal flow, where
+  // opening it changed nothing visible. Bring it into view in that case.
+  const openCart = () => {
+    setIsCartOpen(true);
+    const panel = document.getElementById('mcdo-cart');
+    if (panel && window.getComputedStyle(panel).position === 'static') panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const addToCart = (product, quantity = 1) => {
     addSharedCartItem({ ...product, source: sourceKey, quantity, details: { ...product.details, serviceType } });
     showNotice(`${product.name} added to cart.`);
@@ -407,7 +416,7 @@ export const RestaurantMenu = ({
           <span>{serviceType === 'food' ? 'Food Delivery' : 'Item Delivery'}</span>
           <h1>{restaurantName} Menu</h1>
         </div>
-        <button type="button" className="jollibee-cart-link" onClick={() => setIsCartOpen(true)}>
+        <button type="button" className="jollibee-cart-link" onClick={openCart}>
           <i className="fa-solid fa-cart-shopping" aria-hidden="true" />
           Cart <strong>{itemCount}</strong>
         </button>

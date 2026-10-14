@@ -80,7 +80,7 @@ test('admin live orders and history display names, addresses, and missing-data f
   expect(screen.getByText('Ana Cruz')).toBeInTheDocument();
   expect(screen.getByText('12 Mabini Street, Muñoz')).toBeInTheDocument();
   fireEvent.click(screen.getByRole('button', { name: 'History' }));
-  const row = await screen.findByText('BACKEND-501');
+  const row = await screen.findByText('Order #501');
   const rowElement = row.closest('tr');
   expect(within(rowElement).getByText('Ben Santos')).toBeInTheDocument();
   expect(within(rowElement).getByText('34 Rizal Street, San Jose')).toBeInTheDocument();
@@ -95,22 +95,22 @@ test('admin History tab filters by an exact date, server-side, without hiding an
 
   // Default view ('All dates') must not change existing behavior - every
   // past delivered/cancelled order still shows up.
-  await screen.findByText('BACKEND-501');
-  expect(screen.getByText('BACKEND-502')).toBeInTheDocument();
-  expect(screen.getByText('BACKEND-503')).toBeInTheDocument();
+  await screen.findByText('Order #501');
+  expect(screen.getByText('Order #502')).toBeInTheDocument();
+  expect(screen.getByText('Order #503')).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: 'Today' }));
-  await waitFor(() => expect(screen.queryByText('BACKEND-501')).not.toBeInTheDocument());
-  expect(screen.getByText('BACKEND-503')).toBeInTheDocument();
-  expect(screen.queryByText('BACKEND-502')).not.toBeInTheDocument();
+  await waitFor(() => expect(screen.queryByText('Order #501')).not.toBeInTheDocument());
+  expect(screen.getByText('Order #503')).toBeInTheDocument();
+  expect(screen.queryByText('Order #502')).not.toBeInTheDocument();
 
   fireEvent.change(screen.getByLabelText('Pick an exact date'), { target: { value: '2026-09-12' } });
-  await waitFor(() => expect(screen.queryByText('BACKEND-503')).not.toBeInTheDocument());
-  expect(screen.getByText('BACKEND-501')).toBeInTheDocument();
-  expect(screen.queryByText('BACKEND-502')).not.toBeInTheDocument();
+  await waitFor(() => expect(screen.queryByText('Order #503')).not.toBeInTheDocument());
+  expect(screen.getByText('Order #501')).toBeInTheDocument();
+  expect(screen.queryByText('Order #502')).not.toBeInTheDocument();
 
   fireEvent.click(screen.getByRole('button', { name: 'All dates' }));
-  await waitFor(() => expect(screen.getByText('BACKEND-502')).toBeInTheDocument());
-  expect(screen.getByText('BACKEND-501')).toBeInTheDocument();
-  expect(screen.getByText('BACKEND-503')).toBeInTheDocument();
+  await waitFor(() => expect(screen.getByText('Order #502')).toBeInTheDocument());
+  expect(screen.getByText('Order #501')).toBeInTheDocument();
+  expect(screen.getByText('Order #503')).toBeInTheDocument();
 });

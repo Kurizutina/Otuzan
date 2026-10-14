@@ -12,6 +12,7 @@ import { getSessionUser, isAssignedTo, logout as endSession } from '../../utils/
 import { applyBackendTruth, useBackendOrders } from '../../hooks/useBackendOrders';
 import { apiAssetUrl } from '../../utils/catalog';
 import { remainsVisibleForHours } from '../../utils/backendTime';
+import { orderNumber } from '../../utils/orderNumber';
 import OrderChat from '../../components/common/OrderChat/OrderChat';
 
 const sections = [
@@ -203,7 +204,7 @@ const RiderDashboard = () => {
               const order = displayedOrder(rawOrder);
               return (
               <article className={`rider-order-card status-${order.status}`} key={order.id}>
-                <div className="rider-order-heading"><div><small>{order.id}</small><h3>{getOrderDisplayLabel(order)}</h3></div><span>{statusLabels[order.status] || 'Confirmed'}</span></div>
+                <div className="rider-order-heading"><div><small>{orderNumber(order)}</small><h3>{getOrderDisplayLabel(order)}</h3></div><span>{statusLabels[order.status] || 'Confirmed'}</span></div>
                 <div className="rider-order-source"><i className="fa-solid fa-store" /><div><strong>{order.source}</strong><span>{new Date(order.createdAt).toLocaleString()}</span></div></div>
                 <div className="rider-order-estimate"><i className="fa-regular fa-clock" /><span>Estimated wait</span><strong>{formatEstimatedWait(order, now)}</strong></div>
                 <OrderCustomerDetails order={order} />
