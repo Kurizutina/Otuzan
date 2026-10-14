@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -205,6 +206,45 @@ class AuditFindingsTest extends TestCase
         $this->withHeader('X-Forwarded-For', '10.99.0.1')
             ->postJson('/api/auth/login', ['email' => 'target.audit@example.com', 'password' => 'wrong6'])
             ->assertStatus(429);
+    }
+
+    public function test_reset_emails_are_throttled_per_recipient_even_when_the_ip_changes(): void
+    {
+        Mail::fake();
+        $this->user('customer', 'reset.target@example.com');
+
+        foreach (range(1, 3) as $attempt) {
+            $this->withHeader('X-Forwarded-For', "10.8.{$attempt}.7")
+                ->postJson('/api/auth/forgot-password', ['email' => 'reset.target@example.com'])
+                ->assertOk();
+        }
+        $this->withHeader('X-Forwarded-For', '10.88.0.1')
+            ->postJson('/api/auth/forgot-password', ['email' => 'reset.target@example.com'])
+            ->assertStatus(429);
+        Mail::assertSentCount(3);
+
+        // An unregistered address is limited the same way, so a 429 reveals nothing.
+        foreach (range(1, 3) as $attempt) {
+            $this->withHeader('X-Forwarded-For', "10.7.{$attempt}.7")
+                ->postJson('/api/auth/forgot-password', ['email' => 'nobody.here@example.com'])
+                ->assertOk();
+        }
+        $this->withHeader('X-Forwarded-For', '10.77.0.1')
+            ->postJson('/api/auth/forgot-password', ['email' => 'nobody.here@example.com'])
+            ->assertStatus(429);
+    }
+
+    public function test_registration_has_an_overall_ceiling_even_when_the_ip_changes(): void
+    {
+        $signup = fn (int $n) => $this->withHeader('X-Forwarded-For', "10.6.{$n}.7")->postJson('/api/auth/register', [
+            'email' => "signup{$n}user@example.com", 'password' => 'Password123', 'userType' => 'student',
+            'username' => "Signup {$n}", 'contact' => '09123456789', 'address' => 'PNR Main',
+        ]);
+
+        foreach (range(1, 30) as $n) {
+            $signup($n)->assertCreated();
+        }
+        $signup(31)->assertStatus(429);
     }
 
     public function test_R1_chat_traffic_does_not_use_up_the_order_rate_limit(): void

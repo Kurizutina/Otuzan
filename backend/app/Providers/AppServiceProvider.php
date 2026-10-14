@@ -34,5 +34,21 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(10)->by('ip:'.$request->ip()),
             Limit::perMinute(5)->by('email:'.strtolower(trim((string) $request->input('email')))),
         ]);
+
+        // Same reasoning for reset emails: rotating the IP must not let anyone
+        // flood one inbox (or burn the mail provider's quota). Counted for any
+        // address, registered or not, so a 429 doesn't reveal which exist.
+        RateLimiter::for('forgot-password', fn (Request $request) => [
+            Limit::perMinute(5)->by('ip:'.$request->ip()),
+            Limit::perMinutes(15, 3)->by('email:'.strtolower(trim((string) $request->input('email')))),
+        ]);
+
+        // Every signup uses a new email, so a per-email limit can't slow down
+        // mass registration; an overall ceiling can. Sized well above a whole
+        // class signing up at once.
+        RateLimiter::for('register', fn (Request $request) => [
+            Limit::perMinute(10)->by('ip:'.$request->ip()),
+            Limit::perMinute(30)->by('all'),
+        ]);
     }
 }

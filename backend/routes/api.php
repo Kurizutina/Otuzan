@@ -15,9 +15,9 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
-Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:10,1,register');
+Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:register');
 Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:login');
-Route::post('/auth/forgot-password', [AuthController::class, 'requestPasswordReset'])->middleware('throttle:5,1,forgot');
+Route::post('/auth/forgot-password', [AuthController::class, 'requestPasswordReset'])->middleware('throttle:forgot-password');
 Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->middleware('throttle:10,1,reset');
 // Public routes share one per-IP bucket. A whole campus Wi-Fi shows up as a
 // single IP, so the ceiling is sized for dozens of users, not one browser.
