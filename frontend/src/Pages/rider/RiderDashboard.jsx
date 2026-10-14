@@ -8,7 +8,7 @@ import {
 } from '../../context/CustomerActivityContext';
 import './RiderDashboard.css';
 import OrderCustomerDetails from '../../components/common/OrderCustomerDetails/OrderCustomerDetails';
-import { clearSession, getSessionUser, isAssignedTo } from '../../utils/session';
+import { getSessionUser, isAssignedTo, logout as endSession } from '../../utils/session';
 import { applyBackendTruth, useBackendOrders } from '../../hooks/useBackendOrders';
 import { apiAssetUrl } from '../../utils/catalog';
 import { remainsVisibleForHours } from '../../utils/backendTime';
@@ -168,7 +168,7 @@ const RiderDashboard = () => {
   }, [zoomedImage]);
 
   const logout = () => {
-    clearSession();
+    endSession();
     navigate('/login', { replace: true });
   };
 

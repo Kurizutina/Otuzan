@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './CustomerMenu.css';
 import { syncCustomerOrders } from '../../../../utils/customerProfileSync';
-import { clearSession, getSessionUser } from '../../../../utils/session';
+import { getSessionUser, logout as endSession } from '../../../../utils/session';
 import { PASSWORD_HINT, passwordProblem } from '../../../../utils/passwordRules';
 
 const PROFILE_KEY = 'otuzanCustomerProfile';
@@ -158,7 +158,7 @@ const CustomerMenu = ({ icon }) => {
   };
 
   const logout = () => {
-    clearSession();
+    endSession();
     setIsMenuOpen(false);
     navigate('/login', { replace: true });
   };

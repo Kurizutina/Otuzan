@@ -4,7 +4,7 @@ import { useCustomerActivity } from '../../context/CustomerActivityContext';
 import './DeliveryAdminDashboard.css';
 import OrderCustomerDetails from '../../components/common/OrderCustomerDetails/OrderCustomerDetails';
 import { apiAssetUrl, broadcastCatalogChanged, catalogImageUrl } from '../../utils/catalog';
-import { clearSession } from '../../utils/session';
+import { logout as endSession } from '../../utils/session';
 import { applyBackendTruth, ORDERS_CHANGED_EVENT, ORDER_PROGRESS_CHANGED_STORAGE_KEY, toLocalOrderShape, useBackendOrders } from '../../hooks/useBackendOrders';
 
 const SERVICE_META = {
@@ -856,7 +856,7 @@ const DeliveryAdminDashboard = () => {
   const pendingCount = orders.filter(needsRiderAssignment).length;
   const activeNav = useMemo(() => NAV_ITEMS.find((item) => item.key === activeTab), [activeTab]);
 
-  const logout = () => { clearSession(); navigate('/login', { replace: true }); };
+  const logout = () => { endSession(); navigate('/login', { replace: true }); };
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setIsMobileMenuOpen(false);

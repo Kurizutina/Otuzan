@@ -4,6 +4,9 @@ import './index.css';
 import App from './App';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import reportWebVitals from './reportWebVitals';
+import { installSessionExpiryWatcher } from './utils/session';
+
+installSessionExpiryWatcher();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

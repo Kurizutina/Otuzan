@@ -8,7 +8,7 @@ import '../Auth.css';
 
 import { ROLES } from '../../../config/roles';
 import { syncCustomerOrders } from '../../../utils/customerProfileSync';
-import { getDashboardPath, setSession } from '../../../utils/session';
+import { getDashboardPath, SESSION_EXPIRED_KEY, setSession } from '../../../utils/session';
 
 import {
   sanitizeContactNumber,
@@ -86,6 +86,15 @@ const AuthPage = ({ mode }) => {
 
     setMessage(null);
 
+  }, [mode, selectedRole]);
+
+  // Declared after the reset above so it wins on mount. The flag is cleared by
+  // setSession on the next login, not here, so StrictMode's double effect run
+  // can't consume it before it's shown.
+  useEffect(() => {
+    if (mode === 'login' && sessionStorage.getItem(SESSION_EXPIRED_KEY)) {
+      setMessage({ type: 'error', text: 'Your session has expired. Please log in again.' });
+    }
   }, [mode, selectedRole]);
 
 

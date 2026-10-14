@@ -449,10 +449,14 @@ export const CustomerActivityProvider = ({ children }) => {
       setCart(cartForActiveOwner(nextCart));
     };
     window.addEventListener(SESSION_CHANGED_EVENT, syncCartForSession);
+    // logout() removes the stored delivery area; drop the in-memory copy too.
+    const syncLocationForSession = () => setDeliveryLocationState(localStorage.getItem(LOCATION_KEY) || '');
+    window.addEventListener(SESSION_CHANGED_EVENT, syncLocationForSession);
     return () => {
       window.removeEventListener('storage', syncActivity);
       window.removeEventListener(CUSTOMER_ACTIVITY_CHANGED, syncProfileOrders);
       window.removeEventListener(SESSION_CHANGED_EVENT, syncCartForSession);
+      window.removeEventListener(SESSION_CHANGED_EVENT, syncLocationForSession);
     };
   }, []);
 
