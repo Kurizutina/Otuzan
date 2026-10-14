@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\AuditLog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -42,6 +43,7 @@ class AccountManagementController extends Controller
         unset($data['password']);
 
         $account = User::create($data);
+        AuditLog::record('account created', $request, ['target' => $account->UserID, 'targetRole' => $role]);
         return response()->json($this->accountResponse($account), 201);
     }
 
@@ -58,6 +60,7 @@ class AccountManagementController extends Controller
             unset($data['password']);
         }
         $account->update($data);
+        AuditLog::record($passwordReset ? 'account updated with password reset' : 'account updated', $request, ['target' => $account->UserID, 'targetRole' => $role]);
         // An admin reset means the old password should no longer get anyone in.
         if ($passwordReset) $account->tokens()->delete();
         return response()->json($this->accountResponse($account->fresh()));
@@ -69,6 +72,7 @@ class AccountManagementController extends Controller
         if ($request->user()->UserID === $account->UserID) {
             return response()->json(['error' => 'You cannot delete your own account.'], 422);
         }
+        AuditLog::record('account deleted', $request, ['target' => $account->UserID, 'targetRole' => $role]);
         $account->delete();
         return response()->json(['status' => 'deleted']);
     }

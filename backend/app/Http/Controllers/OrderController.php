@@ -8,8 +8,9 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\Queue;
 use App\Models\User;
-use App\Support\DeliveryFee;
+use App\Support\AuditLog;
 use App\Support\ClientOrder;
+use App\Support\DeliveryFee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -514,6 +515,7 @@ class OrderController extends Controller
         }
 
         $hadRider = !is_null($order->AssignedRiderID);
+        if ($isAdmin) AuditLog::record('order status set by admin: '.$data['status'], $request, ['order' => $order->OrderID, 'from' => $order->DeliveryStatus]);
         $order->update(['DeliveryStatus' => $data['status'], 'StatusUpdatedAt' => now()]
             + ($data['status'] === 'confirmed' ? ['ConfirmedAt' => now()] : []));
         // Any explicit status transition means the order left the raw
@@ -619,6 +621,7 @@ class OrderController extends Controller
         // dashboard; only that status action advances the queue and informs
         // the customer that the order was accepted.
         $order->update(['AssignedRiderID' => $riderId]);
+        AuditLog::record($riderId ? 'order assigned' : 'order unassigned', $request, ['order' => $order->OrderID, 'rider' => $riderId]);
 
         return response()->json(['order' => $order->fresh(['items.product', 'rider:'.self::RIDER_FIELDS])]);
     }

@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -237,7 +238,7 @@ class AuditFindingsTest extends TestCase
     public function test_registration_has_an_overall_ceiling_even_when_the_ip_changes(): void
     {
         $signup = fn (int $n) => $this->withHeader('X-Forwarded-For', "10.6.{$n}.7")->postJson('/api/auth/register', [
-            'email' => "signup{$n}user@example.com", 'password' => 'Password123', 'userType' => 'student',
+            'email' => "signup{$n}user@example.com", 'password' => 'Zebra2026x', 'userType' => 'student',
             'username' => "Signup {$n}", 'contact' => '09123456789', 'address' => 'PNR Main',
         ]);
 
@@ -560,7 +561,7 @@ class AuditFindingsTest extends TestCase
 
     public static function arrayInputs(): array
     {
-        $signup = ['password' => 'Password123', 'userType' => 'student', 'username' => 'X', 'contact' => '09123456789'];
+        $signup = ['password' => 'Zebra2026x', 'userType' => 'student', 'username' => 'X', 'contact' => '09123456789'];
         return [
             'register email' => ['POST', '/api/auth/register', null, ['email' => ['x']] + $signup],
             'login email' => ['POST', '/api/auth/login', null, ['email' => ['x'], 'password' => 'x']],
@@ -594,7 +595,7 @@ class AuditFindingsTest extends TestCase
     public function test_names_cannot_contain_text_direction_controls(): void
     {
         $spoofed = "Juan\u{202E}gnp.exe";
-        $signup = ['password' => 'Password123', 'userType' => 'student', 'contact' => '09123456789'];
+        $signup = ['password' => 'Zebra2026x', 'userType' => 'student', 'contact' => '09123456789'];
 
         $this->postJson('/api/auth/register', ['email' => 'bidiname1@example.com', 'username' => $spoofed] + $signup)
             ->assertStatus(422)
@@ -603,7 +604,7 @@ class AuditFindingsTest extends TestCase
         $this->as($this->token($customer))->patchJson('/api/auth/me', ['username' => $spoofed, 'email' => $customer->Email, 'address' => 'PNR Main'])
             ->assertStatus(422);
         $this->as($this->token($this->user('admin')))->postJson('/api/admin/accounts/driver', [
-            'UserName' => $spoofed, 'Email' => 'bidirider1@example.com', 'Contact' => '09123456789', 'password' => 'Password123',
+            'UserName' => $spoofed, 'Email' => 'bidirider1@example.com', 'Contact' => '09123456789', 'password' => 'Zebra2026x',
         ])->assertStatus(422);
 
         // Accents and emoji are ordinary characters and still allowed.
@@ -637,6 +638,42 @@ class AuditFindingsTest extends TestCase
         $second = $this->as($token)->postJson('/api/orders', $body)->assertCreated()->json('order.OrderID');
 
         $this->assertNotSame($first, $second);
+    }
+
+    public function test_commonly_guessed_passwords_are_rejected_even_with_letters_and_numbers(): void
+    {
+        $signup = ['email' => 'common.pw1@example.com', 'userType' => 'student', 'username' => 'X', 'contact' => '09123456789'];
+
+        foreach (['password1', 'Password123', 'QWERTY123', 'Welcome1'] as $weak) {
+            $this->postJson('/api/auth/register', $signup + ['password' => $weak])
+                ->assertStatus(422)
+                ->assertJsonPath('error', 'That password is too common. Choose one that is harder to guess.');
+        }
+        $customer = $this->user('customer');
+        $this->as($this->token($customer))->postJson('/api/auth/change-password', ['currentPassword' => 'secret123', 'password' => 'password1'])
+            ->assertStatus(422);
+
+        $this->postJson('/api/auth/register', $signup + ['password' => 'Zebra2026x'])->assertCreated();
+    }
+
+    public function test_security_events_are_written_to_the_log_without_secrets(): void
+    {
+        Log::spy();
+        $customer = $this->user('customer', 'logged.target@example.com');
+        $admin = $this->user('admin');
+
+        $this->postJson('/api/auth/login', ['email' => 'logged.target@example.com', 'password' => 'wrong-pass-9'])->assertUnauthorized();
+        $this->as($this->token($customer))->getJson('/api/admin/orders')->assertForbidden();
+        $this->as($this->token($admin))->postJson('/api/admin/accounts/driver', [
+            'UserName' => 'Logged Rider', 'Email' => 'logged.rider@example.com', 'Contact' => '09123456789', 'password' => 'Zebra2026x',
+        ])->assertCreated();
+
+        Log::shouldHaveReceived('warning')->withArgs(fn ($message, $context) => $message === 'audit: login failed'
+            && $context['email'] === 'logged.target@example.com' && !str_contains(json_encode($context), 'wrong-pass-9'))->once();
+        Log::shouldHaveReceived('warning')->withArgs(fn ($message, $context) => $message === 'audit: permission denied: orders.manage'
+            && $context['user'] === $customer->UserID && $context['role'] === 'customer')->once();
+        Log::shouldHaveReceived('warning')->withArgs(fn ($message, $context) => $message === 'audit: account created'
+            && $context['user'] === $admin->UserID && $context['targetRole'] === 'driver' && !str_contains(json_encode($context), 'Zebra2026x'))->once();
     }
 
     public function test_still_works_duplicate_order_guard(): void

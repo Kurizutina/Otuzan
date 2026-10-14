@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Support\AuditLog;
 use App\Support\ClientOrder;
 use App\Support\DeliveryFee;
 use Illuminate\Http\JsonResponse;
@@ -107,6 +108,7 @@ class PaymentController extends Controller
         ]);
 
         $payment->update(['PaymentStatus' => $data['status']]);
+        AuditLog::record('payment '.$data['status'], $request, ['payment' => $payment->PaymentID, 'order' => $payment->OrderID]);
         // Same reasoning as OrderController::notifyStatusChange - admin
         // verifies/rejects from their own console, the customer needs to
         // find out on whichever device they check next.

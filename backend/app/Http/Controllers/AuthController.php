@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Mail\PasswordResetMail;
 use App\Models\User;
+use App\Rules\NotCommonPassword;
+use App\Support\AuditLog;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +21,7 @@ class AuthController extends Controller
     // profile, admin-created accounts): 8+ characters with letters and numbers.
     public static function passwordRule(bool $required = true): array
     {
-        return [$required ? 'required' : 'nullable', 'string', 'max:72', Password::min(8)->letters()->numbers()];
+        return [$required ? 'required' : 'nullable', 'string', 'max:72', Password::min(8)->letters()->numbers(), new NotCommonPassword];
     }
 
     // Logs out every other device; the session making the change stays in.
@@ -147,6 +149,7 @@ class AuthController extends Controller
         $user = User::where('Email', strtolower(trim($data['email'])))->first();
         // Accept existing bcryptjs $2b$ hashes as well as Laravel hashes.
         if (!$user || !password_verify($data['password'], $user->PasswordHash)) {
+            AuditLog::record('login failed', $request, ['email' => strtolower(trim($data['email']))]);
             return response()->json(['error' => 'invalid credentials'], 401);
         }
         return $this->authenticated($user);
@@ -158,6 +161,7 @@ class AuthController extends Controller
         $email = strtolower(trim($data['email']));
         $user = User::where('Email', $email)->first();
 
+        AuditLog::record('password reset requested', $request, ['email' => $email, 'known' => (bool) $user]);
         if ($user) {
             $token = Str::random(64);
             $resetUrl = rtrim((string) config('otuzan.frontend_url'), '/')
@@ -227,6 +231,7 @@ class AuthController extends Controller
         }
 
         $user->update(['PasswordHash' => Hash::make($data['password'])]);
+        AuditLog::record('password reset by link', $request, ['target' => $user->UserID]);
         // Whoever knew the old password may still be logged in somewhere.
         $user->tokens()->delete();
         DB::table('password_reset_tokens')->where('email', $email)->delete();
@@ -264,9 +269,11 @@ class AuthController extends Controller
         ], self::PASSWORD_MESSAGES);
         $user = $request->user();
         if (!password_verify($data['currentPassword'], $user->PasswordHash)) {
+            AuditLog::record('password change refused: wrong current password', $request);
             return response()->json(['error' => 'The current password is incorrect.'], 422);
         }
         $user->update(['PasswordHash' => Hash::make($data['password']), 'MustChangePassword' => false]);
+        AuditLog::record('password changed', $request);
         $this->revokeOtherSessions($request);
         return response()->json(['message' => 'Your password has been changed.']);
     }
