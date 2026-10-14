@@ -6,6 +6,7 @@ use App\Models\Payment;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -23,17 +24,19 @@ class PaymentApiTest extends TestCase
     }
 
     // Receipt links must point at a document that was actually uploaded
-    // (audit S9), so tests put one on the faked private disk first.
+    // (audit S9) by the same customer, so tests put one on the faked private
+    // disk and record its owner the way the upload route does.
     protected function setUp(): void
     {
         parent::setUp();
         Storage::fake('local');
     }
 
-    private function uploadedDocument(string $extension): string
+    private function uploadedDocument(string $extension, User $owner): string
     {
         $name = Str::uuid().'.'.$extension;
         Storage::disk('local')->put('bill-documents/'.$name, 'test document');
+        Cache::put('bill-document-owner:'.$name, $owner->UserID, now()->addDay());
         return '/uploads/bill-documents/'.$name;
     }
 
@@ -60,8 +63,8 @@ class PaymentApiTest extends TestCase
             'amount' => 850,
             'method' => 'GCash',
             'deliveryAddress' => 'PNR Main',
-            'billReceiptUrl' => $this->uploadedDocument('jpg'),
-            'transferProofUrl' => $this->uploadedDocument('jpg'),
+            'billReceiptUrl' => $this->uploadedDocument('jpg', $customer),
+            'transferProofUrl' => $this->uploadedDocument('jpg', $customer),
         ])->assertCreated();
 
         $orderId = $response->json('orderId');
@@ -107,7 +110,7 @@ class PaymentApiTest extends TestCase
         $bill = $this->withToken($this->token($customer))->postJson('/api/payments', [
             'establishment' => 'PrimeWater', 'amount' => 500, 'serviceFee' => 75,
             'deliveryAddress' => 'CLSU Main Campus', 'clientOrderId' => 'BILL-TEST',
-            'billReceiptUrl' => $this->uploadedDocument('pdf'),
+            'billReceiptUrl' => $this->uploadedDocument('pdf', $customer),
             'billReceiptType' => 'application/pdf',
         ])->assertCreated();
         $order = \App\Models\Order::findOrFail($bill->json('orderId'));

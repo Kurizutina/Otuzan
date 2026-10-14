@@ -10,6 +10,7 @@ use App\Http\Controllers\PaymentController;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
@@ -59,6 +60,9 @@ Route::middleware(['auth:sanctum', 'password.changed', 'throttle:600,1,api'])->g
         // the order (see Payment::paymentNote and the route below).
         $filename = Str::uuid()->toString().'.'.$file->extension();
         $file->storeAs('bill-documents', $filename, 'local');
+        // Remember who uploaded it, so a bill can only attach the customer's
+        // own documents (PaymentController::store checks this).
+        Cache::put('bill-document-owner:'.$filename, $request->user()->UserID, now()->addDay());
         return response()->json(['url' => '/uploads/bill-documents/'.$filename, 'name' => $file->getClientOriginalName()], 201);
     })->middleware('throttle:20,1,uploads');
     Route::post('/orders', [OrderController::class, 'store'])->middleware('throttle:20,1,orders');

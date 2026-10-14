@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Queue;
 use App\Models\User;
 use App\Support\DeliveryFee;
+use App\Support\ClientOrder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,6 +49,7 @@ class OrderController extends Controller
             // OrderID patch is interrupted.
             'clientOrderId' => ['nullable', 'string', 'max:100'],
             'deliveryAddress' => [
+                'bail',
                 'required',
                 'string',
                 'max:2000',
@@ -66,16 +68,17 @@ class OrderController extends Controller
         // (double-tap, retry, duplicate tab), return the already-created order
         // instead of inserting a second one. Scoped to the authenticated user so
         // one customer cannot fish for another's orders by guessing an ID.
-        if (!empty($data['clientOrderId'])) {
-            $existing = Order::where('UserID', $request->user()->UserID)
-                ->whereJsonContains('OrderSnapshot->clientOrderId', $data['clientOrderId'])
-                ->with('items.product')
-                ->first();
+        return ClientOrder::once($request, $data['clientOrderId'] ?? null, function () use ($data, $request) {
+            $existing = ClientOrder::recent($request, $data['clientOrderId'] ?? null);
             if ($existing) {
-                return response()->json(['order' => $existing], 200);
+                return response()->json(['order' => $existing->load('items.product')], 200);
             }
-        }
+            return $this->createOrder($data, $request);
+        });
+    }
 
+    private function createOrder(array $data, Request $request): JsonResponse
+    {
         $order = DB::transaction(function () use ($data, $request) {
 
             $serviceFee = DeliveryFee::for($request->user()->UserType);
@@ -162,7 +165,7 @@ class OrderController extends Controller
 
     public function indexAll(Request $request): JsonResponse
     {
-        $request->validate(['date' => ['nullable', 'date_format:Y-m-d']]);
+        $request->validate(['date' => ['nullable', 'date_format:Y-m-d'], 'status' => ['nullable', 'string', 'max:200'], 'service' => ['nullable', 'string']]);
         $query = Order::query()->with(['items.product.brand.service', 'user:'.self::CUSTOMER_FIELDS, 'rider:'.self::RIDER_FIELDS, 'payments'])->orderByDesc('OrderDate');
         // Comma-separated so the History tab can ask for delivered+cancelled
         // in one request instead of two - a single status still works

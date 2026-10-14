@@ -556,6 +556,89 @@ class AuditFindingsTest extends TestCase
         ])->assertStatus(422);
     }
 
+    // ------------------------------------- 2026-10-13 pre-release audit (task 4)
+
+    public static function arrayInputs(): array
+    {
+        $signup = ['password' => 'Password123', 'userType' => 'student', 'username' => 'X', 'contact' => '09123456789'];
+        return [
+            'register email' => ['POST', '/api/auth/register', null, ['email' => ['x']] + $signup],
+            'login email' => ['POST', '/api/auth/login', null, ['email' => ['x'], 'password' => 'x']],
+            'forgot-password email' => ['POST', '/api/auth/forgot-password', null, ['email' => ['x']]],
+            'profile email' => ['PATCH', '/api/auth/me', 'customer', ['username' => 'X', 'email' => ['x'], 'address' => 'PNR Main']],
+            'order address' => ['POST', '/api/orders', 'customer', ['customItems' => [['name' => 'x', 'quantity' => 1]], 'deliveryAddress' => ['x']]],
+            'bill address' => ['POST', '/api/payments', 'customer', ['establishment' => 'X', 'deliveryAddress' => ['x']]],
+            'bill receipt' => ['POST', '/api/payments', 'customer', ['establishment' => 'X', 'deliveryAddress' => 'PNR Main', 'billReceiptUrl' => ['x']]],
+            'admin status filter' => ['GET', '/api/admin/orders?status[]=x', 'admin', []],
+            'account search' => ['GET', '/api/admin/accounts/customer?search[]=x', 'admin', []],
+        ];
+    }
+
+    #[DataProvider('arrayInputs')]
+    public function test_array_values_in_string_fields_are_a_validation_error_not_a_crash(string $method, string $uri, ?string $role, array $body): void
+    {
+        $request = $role ? $this->as($this->token($this->user($role))) : $this;
+        $request->json($method, $uri, $body)->assertStatus(422);
+    }
+
+    public function test_a_temporary_password_cannot_be_replaced_with_itself(): void
+    {
+        $rider = $this->user('driver', null, ['MustChangePassword' => true]);
+
+        $this->as($this->token($rider))->postJson('/api/auth/change-password', ['currentPassword' => 'secret123', 'password' => 'secret123'])
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'Your new password must be different from your current password.');
+        $this->assertTrue($rider->fresh()->MustChangePassword);
+    }
+
+    public function test_names_cannot_contain_text_direction_controls(): void
+    {
+        $spoofed = "Juan\u{202E}gnp.exe";
+        $signup = ['password' => 'Password123', 'userType' => 'student', 'contact' => '09123456789'];
+
+        $this->postJson('/api/auth/register', ['email' => 'bidiname1@example.com', 'username' => $spoofed] + $signup)
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'Names cannot contain text-direction control characters.');
+        $customer = $this->user('customer');
+        $this->as($this->token($customer))->patchJson('/api/auth/me', ['username' => $spoofed, 'email' => $customer->Email, 'address' => 'PNR Main'])
+            ->assertStatus(422);
+        $this->as($this->token($this->user('admin')))->postJson('/api/admin/accounts/driver', [
+            'UserName' => $spoofed, 'Email' => 'bidirider1@example.com', 'Contact' => '09123456789', 'password' => 'Password123',
+        ])->assertStatus(422);
+
+        // Accents and emoji are ordinary characters and still allowed.
+        $this->postJson('/api/auth/register', ['email' => 'accentname1@example.com', 'username' => 'Zoë Peña 🍔'] + $signup)->assertCreated();
+    }
+
+    public function test_a_bill_can_only_attach_documents_the_same_customer_uploaded(): void
+    {
+        Storage::fake('local');
+        $owner = $this->user('customer');
+        $url = $this->as($this->token($owner))->post('/api/uploads/bill-documents', [
+            'document' => UploadedFile::fake()->image('receipt.png'),
+        ], ['Accept' => 'application/json'])->assertCreated()->json('url');
+        $bill = ['establishment' => 'NEECO', 'deliveryAddress' => 'PNR Main', 'billReceiptUrl' => $url];
+
+        $this->as($this->token($this->user('customer')))->postJson('/api/payments', $bill)
+            ->assertStatus(422)
+            ->assertJsonPath('error', 'Please upload the bill documents again.');
+        $this->as($this->token($owner))->postJson('/api/payments', $bill)->assertCreated();
+    }
+
+    public function test_the_duplicate_guard_only_matches_orders_from_the_last_hour(): void
+    {
+        $token = $this->token($this->user('customer'));
+        // The browser's order numbers are the last 7 digits of a timestamp,
+        // so the same number comes back every ~2.8 hours.
+        $body = ['items' => [['ProductID' => $this->product()->ProductID, 'quantity' => 1]], 'deliveryAddress' => 'PNR Main', 'clientOrderId' => 'ORD-1234567'];
+
+        $first = $this->as($token)->postJson('/api/orders', $body)->assertCreated()->json('order.OrderID');
+        $this->travel(61)->minutes();
+        $second = $this->as($token)->postJson('/api/orders', $body)->assertCreated()->json('order.OrderID');
+
+        $this->assertNotSame($first, $second);
+    }
+
     public function test_still_works_duplicate_order_guard(): void
     {
         $token = $this->token($this->user('customer'));

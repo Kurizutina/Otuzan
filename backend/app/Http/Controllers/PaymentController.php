@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\Notification;
 use App\Models\Order;
 use App\Models\Payment;
+use App\Support\ClientOrder;
 use App\Support\DeliveryFee;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -23,24 +25,27 @@ class PaymentController extends Controller
     public function store(Request $request): JsonResponse
     {
         abort_unless($request->user()->Role === 'customer', 403);
-        // Receipt/proof links must be documents uploaded through
-        // /api/uploads/bill-documents - not an outside site or a javascript: URL.
-        $uploadedDocument = function ($attribute, $value, $fail) {
+        // Receipt/proof links must be documents this same customer uploaded
+        // through /api/uploads/bill-documents in the last day (the route records
+        // the owner) - not an outside site, a javascript: URL, or someone
+        // else's file whose name leaked.
+        $uploadedDocument = function ($attribute, $value, $fail) use ($request) {
             $valid = preg_match('#^/uploads/bill-documents/([0-9a-f-]{36}\.(?:jpg|jpeg|png|webp|gif|pdf))$#', (string) $value, $match) === 1
-                && Storage::disk('local')->exists('bill-documents/'.$match[1]);
+                && Storage::disk('local')->exists('bill-documents/'.$match[1])
+                && Cache::get('bill-document-owner:'.$match[1]) === $request->user()->UserID;
             if (!$valid) $fail('Please upload the bill documents again.');
         };
         $data = $request->validate([
             'establishment' => ['required', 'string', 'max:150'],
             'amount' => ['nullable', 'numeric', 'min:0', 'max:999999.99'],
             'method' => ['nullable', 'string', 'max:50'],
-            'billReceiptUrl' => ['nullable', 'string', 'max:500', $uploadedDocument],
+            'billReceiptUrl' => ['bail', 'nullable', 'string', 'max:500', $uploadedDocument],
             'billReceiptName' => ['nullable', 'string', 'max:255'],
-            'transferProofUrl' => ['nullable', 'string', 'max:500', $uploadedDocument],
+            'transferProofUrl' => ['bail', 'nullable', 'string', 'max:500', $uploadedDocument],
             'transferProofName' => ['nullable', 'string', 'max:255'],
             // Ignored (still accepted from older clients): the server sets the fee.
             'serviceFee' => ['nullable', 'numeric', 'min:0', 'max:500'],
-            'deliveryAddress' => ['required', 'string', 'max:2000', function ($attribute, $value, $fail) {
+            'deliveryAddress' => ['bail', 'required', 'string', 'max:2000', function ($attribute, $value, $fail) {
                 if (!DeliveryFee::zoneFor($value)) $fail('Delivery address must be within a supported delivery location.');
             }],
             'clientOrderId' => ['nullable', 'string', 'max:100'],
@@ -49,13 +54,15 @@ class PaymentController extends Controller
         ]);
 
         // Same double-submit guard as OrderController::store, scoped to this customer.
-        if (!empty($data['clientOrderId'])) {
-            $existing = Payment::whereHas('order', fn ($orders) => $orders
-                ->where('UserID', $request->user()->UserID)
-                ->whereJsonContains('OrderSnapshot->clientOrderId', $data['clientOrderId']))->first();
+        return ClientOrder::once($request, $data['clientOrderId'] ?? null, function () use ($data, $request) {
+            $existing = ClientOrder::recent($request, $data['clientOrderId'] ?? null)?->payments()->first();
             if ($existing) return response()->json(['payment' => $existing, 'orderId' => $existing->OrderID], 200);
-        }
+            return $this->createPayment($data, $request);
+        });
+    }
 
+    private function createPayment(array $data, Request $request): JsonResponse
+    {
         $payment = DB::transaction(function () use ($data, $request) {
             $serviceFee = DeliveryFee::for($request->user()->UserType);
             $order = Order::create([

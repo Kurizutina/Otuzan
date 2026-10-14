@@ -76,6 +76,12 @@ class AuthController extends Controller
     // TLD) passes it despite never being a deliverable address. Required
     // wherever an email is being set (register, profile edit), so an account
     // can't be edited into an address nobody can actually reach.
+    // Text-direction control characters (e.g. U+202E) make a name display as
+    // something else. Shared with admin-created accounts.
+    public const NAME_RULE = 'not_regex:/[\x{200E}\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u';
+    public const NAME_MESSAGE = 'Names cannot contain text-direction control characters.';
+    private const PASSWORD_MESSAGES = ['password.different' => 'Your new password must be different from your current password.'];
+
     private const EMAIL_FORMAT_RULE = 'regex:/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/i';
 
     // Gmail's username rules, applied to every provider: 6-30 characters,
@@ -83,7 +89,9 @@ class AuthController extends Controller
     private function emailUsernameRule(): \Closure
     {
         return function (string $attribute, mixed $value, \Closure $fail) {
-            $local = strstr((string) $value, '@', true);
+            // Non-strings are already rejected by the email rule.
+            if (!is_string($value)) return;
+            $local = strstr($value, '@', true);
             if ($local === false || !preg_match('/^(?!\.)(?!.*\.\.)[a-z0-9.]{6,30}(?<!\.)$/i', $local)) {
                 $fail('Email username must be 6-30 characters using only letters, numbers and periods (no leading, trailing or repeated periods).');
             }
@@ -103,13 +111,13 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'email' => ['required', 'email', self::EMAIL_FORMAT_RULE, $this->emailUsernameRule(), 'max:255'],
+            'email' => ['bail', 'required', 'email', self::EMAIL_FORMAT_RULE, $this->emailUsernameRule(), 'max:255'],
             'password' => self::passwordRule(),
             'userType' => ['required', 'in:student,non_student'],
-            'username' => ['required', 'string', 'max:100'],
+            'username' => ['required', 'string', 'max:100', self::NAME_RULE],
             'contact' => ['required', 'string', 'regex:/^09\d{9}\z/'],
             'address' => ['nullable', 'string', 'max:2000'],
-        ], ['contact.regex' => 'Contact number must be exactly 11 digits and start with 09.']);
+        ], ['contact.regex' => 'Contact number must be exactly 11 digits and start with 09.', 'username.not_regex' => self::NAME_MESSAGE]);
         $email = strtolower(trim($data['email']));
         if ($this->isBlockedEmail($email)) {
             return response()->json(['error' => 'Please use a real, permanent email address to register.'], 422);
@@ -251,8 +259,9 @@ class AuthController extends Controller
     {
         $data = $request->validate([
             'currentPassword' => ['required', 'string'],
-            'password' => self::passwordRule(),
-        ]);
+            // A temporary password must actually be replaced, not re-entered.
+            'password' => [...self::passwordRule(), 'different:currentPassword'],
+        ], self::PASSWORD_MESSAGES);
         $user = $request->user();
         if (!password_verify($data['currentPassword'], $user->PasswordHash)) {
             return response()->json(['error' => 'The current password is incorrect.'], 422);
@@ -266,20 +275,21 @@ class AuthController extends Controller
     {
         // Accounts created before the Gmail-style username rule keep working:
         // it is only enforced when the email is actually being changed.
-        $emailRules = ['required', 'email', self::EMAIL_FORMAT_RULE, 'max:255'];
-        $emailChanged = strtolower(trim((string) $request->input('email'))) !== strtolower($request->user()->Email);
+        $emailRules = ['bail', 'required', 'email', self::EMAIL_FORMAT_RULE, 'max:255'];
+        $requestedEmail = $request->input('email');
+        $emailChanged = !is_string($requestedEmail) || strtolower(trim($requestedEmail)) !== strtolower($request->user()->Email);
         if ($emailChanged) {
             $emailRules[] = $this->emailUsernameRule();
         }
         $data = $request->validate([
-            'username' => ['required', 'string', 'max:100'],
+            'username' => ['required', 'string', 'max:100', self::NAME_RULE],
             'email' => $emailRules,
             'address' => ['required', 'string', 'max:2000'],
-            'password' => self::passwordRule(required: false),
+            'password' => [...self::passwordRule(required: false), 'different:currentPassword'],
             // The email is the login and the password-reset address, so
             // changing it needs the current password just like the password does.
             'currentPassword' => [$emailChanged ? 'required' : 'required_with:password', 'nullable', 'string'],
-        ], [], ['username' => 'full name', 'currentPassword' => 'current password']);
+        ], ['username.not_regex' => self::NAME_MESSAGE] + self::PASSWORD_MESSAGES, ['username' => 'full name', 'currentPassword' => 'current password']);
         $user = $request->user();
         if ((!empty($data['password']) || $emailChanged) && !password_verify((string) $data['currentPassword'], $user->PasswordHash)) {
             return response()->json(['error' => 'The current password is incorrect.'], 422);

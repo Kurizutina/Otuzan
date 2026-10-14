@@ -13,6 +13,7 @@ class AccountManagementController extends Controller
     public function index(Request $request, string $role): JsonResponse
     {
         $this->ensureManagedRole($role);
+        $request->validate(['search' => ['nullable', 'string', 'max:100']]);
         $query = User::query()->where('Role', $role)->orderBy('UserName')->orderBy('UserID');
         $search = trim((string) $request->query('search'));
 
@@ -79,14 +80,14 @@ class AccountManagementController extends Controller
         if ($account) $emailRule->ignore($account->UserID, 'UserID');
 
         $data = $request->validate([
-            'UserName' => [$partial ? 'sometimes' : 'required', 'string', 'max:100'],
+            'UserName' => [$partial ? 'sometimes' : 'required', 'string', 'max:100', AuthController::NAME_RULE],
             // Plain `email` only checks RFC syntax - "a@ce" passes despite never
             // being deliverable. Same regex as AuthController::EMAIL_FORMAT_RULE.
             'Email' => [$partial ? 'sometimes' : 'required', 'email', 'regex:/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/i', 'max:255', $emailRule],
             'Contact' => [$partial ? 'sometimes' : 'required', 'string', 'max:50'],
             'Address' => ['nullable', 'string', 'max:2000'],
             'password' => $passwordRules,
-        ]);
+        ], ['UserName.not_regex' => AuthController::NAME_MESSAGE]);
 
         if (array_key_exists('UserName', $data)) $data['UserName'] = trim($data['UserName']);
         if (array_key_exists('Email', $data)) $data['Email'] = strtolower(trim($data['Email']));

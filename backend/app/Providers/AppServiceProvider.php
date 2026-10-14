@@ -28,11 +28,15 @@ class AppServiceProvider extends ServiceProvider
         Mail::extend('brevo', fn (array $config) => new BrevoTransport((string) ($config['api_key'] ?? '')));
         Mail::extend('sendgrid', fn (array $config) => new SendGridApiTransport($config['api_key'] ?? ''));
 
+        // Runs before validation, so a non-string email (e.g. an array) must
+        // not reach strtolower - that was a 500 instead of a 422.
+        $email = fn (Request $request) => is_string($value = $request->input('email')) ? strtolower(trim($value)) : '';
+
         // Per account as well as per IP: the IP alone can be rotated (or, behind
         // a proxy, spoofed through X-Forwarded-For), the targeted email cannot.
         RateLimiter::for('login', fn (Request $request) => [
             Limit::perMinute(10)->by('ip:'.$request->ip()),
-            Limit::perMinute(5)->by('email:'.strtolower(trim((string) $request->input('email')))),
+            Limit::perMinute(5)->by('email:'.$email($request)),
         ]);
 
         // Same reasoning for reset emails: rotating the IP must not let anyone
@@ -40,7 +44,7 @@ class AppServiceProvider extends ServiceProvider
         // address, registered or not, so a 429 doesn't reveal which exist.
         RateLimiter::for('forgot-password', fn (Request $request) => [
             Limit::perMinute(5)->by('ip:'.$request->ip()),
-            Limit::perMinutes(15, 3)->by('email:'.strtolower(trim((string) $request->input('email')))),
+            Limit::perMinutes(15, 3)->by('email:'.$email($request)),
         ]);
 
         // Every signup uses a new email, so a per-email limit can't slow down
