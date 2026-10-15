@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { toUtcIso } from '../utils/backendTime';
 import { ORDERS_CHANGED_EVENT, ORDER_PROGRESS_CHANGED_STORAGE_KEY } from './useBackendOrders';
-import { SESSION_CHANGED_EVENT, getSessionUser } from '../utils/session';
+import { SESSION_CHANGED_EVENT, getSessionUser, getToken } from '../utils/session';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const ACTIVE_NOTIFICATION_REFRESH_MS = 2000;
@@ -25,7 +25,7 @@ export const useBackendNotifications = () => {
   }, []);
 
   useEffect(() => {
-    const token = sessionStorage.getItem('otuzanAuthenticated');
+    const token = getToken();
     const userId = getSessionUser()?.id;
     if (!token || userId == null) return undefined;
     const controller = new AbortController();

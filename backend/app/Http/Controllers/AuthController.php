@@ -82,6 +82,13 @@ class AuthController extends Controller
     // something else. Shared with admin-created accounts.
     public const NAME_RULE = 'not_regex:/[\x{200E}\x{200F}\x{202A}-\x{202E}\x{2066}-\x{2069}]/u';
     public const NAME_MESSAGE = 'Names cannot contain text-direction control characters.';
+    // How long a login lasts, by risk. The browser keeps it across restarts
+    // (utils/session.js), so these are the real sign-in intervals. Customers
+    // order from their own phone; riders work whole shifts and must not be
+    // logged out mid-delivery; an admin account can do the most damage, so it
+    // stays at one day until admin two-step login exists (then raise to 7).
+    // Logout, a password change or a reset still revoke tokens at once.
+    private const SESSION_DAYS = ['customer' => 30, 'driver' => 14, 'admin' => 1];
     private const PASSWORD_MESSAGES = ['password.different' => 'Your new password must be different from your current password.'];
 
     private const EMAIL_FORMAT_RULE = 'regex:/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/i';
@@ -227,7 +234,7 @@ class AuthController extends Controller
 
     private function authenticated(User $user, int $status = 200): JsonResponse
     {
-        $token = $user->createToken('dashboard', ['*'], now()->addHours(2))->plainTextToken;
+        $token = $user->createToken('dashboard', ['*'], now()->addDays(self::SESSION_DAYS[$user->Role] ?? 1))->plainTextToken;
         return response()->json([
             'user' => $user->profile(),
             'token' => $token,

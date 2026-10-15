@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { toUtcIso } from '../utils/backendTime';
 import { catalogImageUrl } from '../utils/catalog';
+import { getToken } from '../utils/session';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 // Status is work-critical while a delivery is active. Two seconds is quick
@@ -43,7 +44,7 @@ export const useBackendOrders = (endpoint) => {
   const [backendOrdersById, setBackendOrdersById] = useState({});
 
   useEffect(() => {
-    const token = sessionStorage.getItem('otuzanAuthenticated');
+    const token = getToken();
     if (!token) return undefined;
     const controller = new AbortController();
     let inFlight = false;

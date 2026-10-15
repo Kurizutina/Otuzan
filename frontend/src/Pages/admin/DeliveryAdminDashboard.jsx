@@ -4,7 +4,7 @@ import { useCustomerActivity } from '../../context/CustomerActivityContext';
 import './DeliveryAdminDashboard.css';
 import OrderCustomerDetails from '../../components/common/OrderCustomerDetails/OrderCustomerDetails';
 import { apiAssetUrl, broadcastCatalogChanged, catalogImageUrl } from '../../utils/catalog';
-import { logout as endSession } from '../../utils/session';
+import { getToken, logout as endSession } from '../../utils/session';
 import { orderNumber } from '../../utils/orderNumber';
 import { applyBackendTruth, ORDERS_CHANGED_EVENT, ORDER_PROGRESS_CHANGED_STORAGE_KEY, toLocalOrderShape, useBackendOrders } from '../../hooks/useBackendOrders';
 
@@ -265,7 +265,7 @@ const HistoryTab = () => {
     if (dateFilter) params.set('date', dateFilter);
     if (search) params.set('search', search);
     fetch(`${api}/api/admin/orders?${params}`, {
-      headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
+      headers: { Authorization: `Bearer ${getToken()}` },
       signal: controller.signal
     })
       .then((response) => (response.ok ? response.json() : Promise.reject()))
@@ -285,7 +285,7 @@ const HistoryTab = () => {
     const api = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     fetch(`${api}/api/orders/${order.backendOrderId}/report`, {
       method: 'PATCH',
-      headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` }
+      headers: { Authorization: `Bearer ${getToken()}` }
     })
       .then((response) => {
         if (!response.ok) throw new Error();
@@ -337,7 +337,7 @@ const RevenueTab = () => {
     const api = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     const params = new URLSearchParams(dateFilter ? { date: dateFilter } : {});
     fetch(`${api}/api/admin/revenue?${params}`, {
-      headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
+      headers: { Authorization: `Bearer ${getToken()}` },
       signal: controller.signal
     })
       .then((response) => (response.ok ? response.json() : Promise.reject()))
@@ -469,7 +469,7 @@ const CustomerSegmentsCard = () => {
     const controller = new AbortController();
     const api = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     fetch(`${api}/api/admin/customer-segments`, {
-      headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
+      headers: { Authorization: `Bearer ${getToken()}` },
       signal: controller.signal
     })
       .then((response) => (response.ok ? response.json() : Promise.reject()))
@@ -518,7 +518,7 @@ const DemandForecastCard = () => {
     const controller = new AbortController();
     const api = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     fetch(`${api}/api/admin/demand-forecast`, {
-      headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
+      headers: { Authorization: `Bearer ${getToken()}` },
       signal: controller.signal
     })
       .then((response) => (response.ok ? response.json() : Promise.reject()))
@@ -624,7 +624,7 @@ const usePaymentHistory = (enabled, page) => {
     const api = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     const params = new URLSearchParams({ service: 'bills', per_page: String(PAYMENTS_PAGE_SIZE), page: String(page) });
     fetch(`${api}/api/admin/orders?${params}`, {
-      headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
+      headers: { Authorization: `Bearer ${getToken()}` },
       signal: controller.signal
     })
       .then((response) => (response.ok ? response.json() : Promise.reject()))
@@ -734,7 +734,7 @@ const CatalogTab = () => {
   const [productImageFile, setProductImageFile] = useState(null);
   const request = useCallback(async (path, options = {}) => {
     const isFormData = options.body instanceof FormData;
-    const response = await fetch(`${api}/api/admin/catalog/${path}`, { ...options, headers: { Accept: 'application/json', Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}`, ...(isFormData ? {} : { 'Content-Type': 'application/json' }), ...(options.headers || {}) } });
+    const response = await fetch(`${api}/api/admin/catalog/${path}`, { ...options, headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}`, ...(isFormData ? {} : { 'Content-Type': 'application/json' }), ...(options.headers || {}) } });
     const rawBody = await response.text();
     let body = {};
     try { body = rawBody ? JSON.parse(rawBody) : {}; }
@@ -827,7 +827,7 @@ const AccountManagementTab = ({ role, onAccountsChanged }) => {
   // this table had the identical gap (no loading state at all).
   const [loading, setLoading] = useState(true);
   const request = useCallback(async (path, options = {}) => {
-    const token = sessionStorage.getItem('otuzanAuthenticated');
+    const token = getToken();
     if (!token) throw new Error('Your admin session has expired. Sign in again.');
     const requestUrl = `${api}/api/admin/accounts/${path}`;
     const response = await fetch(requestUrl, {
@@ -900,7 +900,7 @@ const DeliveryAdminDashboard = () => {
     const loadRiders = async () => {
       try {
         const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/riders`, {
-          headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
+          headers: { Authorization: `Bearer ${getToken()}` },
           signal: controller.signal
         });
         const result = await response.json();

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Logo from '../../components/common/Logo/Logo';
-import { clearSession, getDashboardPath, getSessionUser } from '../../utils/session';
+import { clearSession, getDashboardPath, getSessionUser, getToken } from '../../utils/session';
 import '../../components/Auth/Auth.css';
 import { passwordProblem } from '../../utils/passwordRules';
 
@@ -25,7 +25,7 @@ const ChangePassword = () => {
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/change-password`, {
         method: 'POST',
-        headers: { Accept: 'application/json', Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}`, 'Content-Type': 'application/json' },
+        headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ currentPassword, password })
       });
       const result = await response.json();

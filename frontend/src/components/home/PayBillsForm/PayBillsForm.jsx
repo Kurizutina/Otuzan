@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './PayBillsForm.css';
 import { API_BASE_URL } from '../../../utils/catalog';
-import { getSessionUser } from '../../../utils/session';
+import { getSessionUser, getToken } from '../../../utils/session';
 import { useCustomerActivity } from '../../../context/CustomerActivityContext';
 import LocationPicker from '../Header/LocationPicker/LocationPicker';
 import { calculateDeliveryFee, findDeliveryLocation } from '../../../utils/deliveryRates';
@@ -42,7 +42,7 @@ const uploadDocument = async (file) => {
   body.append('document', file);
   const response = await fetch(`${API_BASE_URL}/api/uploads/bill-documents`, {
     method: 'POST',
-    headers: { Accept: 'application/json', Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
+    headers: { Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
     body
   });
   let data;

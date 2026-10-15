@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './CustomerMenu.css';
 import { syncCustomerOrders } from '../../../../utils/customerProfileSync';
-import { getSessionUser, logout as endSession } from '../../../../utils/session';
+import { getSessionUser, getToken, logout as endSession, updateSessionUser } from '../../../../utils/session';
 import { PASSWORD_HINT, passwordProblem } from '../../../../utils/passwordRules';
 
 const PROFILE_KEY = 'otuzanCustomerProfile';
@@ -11,7 +11,7 @@ const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const cacheProfile = (user) => {
   localStorage.setItem(PROFILE_KEY, JSON.stringify(user));
   localStorage.setItem(`otuzanCustomerAddress:${user.email.toLowerCase()}`, user.address || '');
-  sessionStorage.setItem('otuzanUser', JSON.stringify(user));
+  updateSessionUser(user);
   syncCustomerOrders(user);
 };
 
@@ -82,7 +82,7 @@ const CustomerMenu = ({ icon }) => {
       setProfileLoaded(false);
       try {
         const response = await fetch(`${API_URL}/api/auth/me`, {
-          headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}`, Accept: 'application/json' },
+          headers: { Authorization: `Bearer ${getToken()}`, Accept: 'application/json' },
           signal: controller.signal
         });
         const result = await response.json();
@@ -142,7 +142,7 @@ const CustomerMenu = ({ icon }) => {
     try {
       const response = await fetch(`${API_URL}/api/auth/me`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', Authorization: `Bearer ${getToken()}` },
         body: JSON.stringify(persistedProfile)
       });
       const result = await response.json();

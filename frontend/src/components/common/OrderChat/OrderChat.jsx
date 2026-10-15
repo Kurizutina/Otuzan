@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { API_BASE_URL } from '../../../utils/catalog';
-import { getSessionUser } from '../../../utils/session';
+import { getSessionUser, getToken } from '../../../utils/session';
 import { toUtcIso } from '../../../utils/backendTime';
 import './OrderChat.css';
 
@@ -10,7 +10,7 @@ const CHAT_REFRESH_MS = 1000;
 const CHAT_CHANNEL = 'otuzan-order-chat';
 
 const authHeaders = () => {
-  const token = sessionStorage.getItem('otuzanAuthenticated');
+  const token = getToken();
   return token ? { Authorization: `Bearer ${token}` } : null;
 };
 

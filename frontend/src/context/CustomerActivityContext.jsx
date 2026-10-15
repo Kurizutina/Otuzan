@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { getSessionUser, isAssignedTo, SESSION_CHANGED_EVENT } from '../utils/session';
+import { getSessionUser, getToken, isAssignedTo, SESSION_CHANGED_EVENT } from '../utils/session';
 import { CUSTOMER_ACTIVITY_CHANGED } from '../utils/customerProfileSync';
 import { broadcastOrderProgressChanged } from '../hooks/useBackendOrders';
 import { calculateDeliveryFee, findDeliveryLocation } from '../utils/deliveryRates';
@@ -19,7 +19,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 export const STATUS_SYNC_TIMEOUT_MS = 3000;
 
 const authHeaders = () => {
-  const token = sessionStorage.getItem('otuzanAuthenticated');
+  const token = getToken();
   return token ? { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` } : null;
 };
 
