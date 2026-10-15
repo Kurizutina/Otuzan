@@ -6,6 +6,7 @@ import OrderCustomerDetails from '../../components/common/OrderCustomerDetails/O
 import { apiAssetUrl, broadcastCatalogChanged, catalogImageUrl } from '../../utils/catalog';
 import { getToken, logout as endSession } from '../../utils/session';
 import { orderNumber } from '../../utils/orderNumber';
+import { formatWaiting, minutesWaiting, useNow, useTabTitleCount, waitingLevel } from '../../utils/waiting';
 import { applyBackendTruth, ORDERS_CHANGED_EVENT, ORDER_PROGRESS_CHANGED_STORAGE_KEY, toLocalOrderShape, useBackendOrders } from '../../hooks/useBackendOrders';
 
 const SERVICE_META = {
@@ -74,8 +75,12 @@ const ServiceBadge = ({ service }) => {
   return <span className="admin-service-badge" style={{ '--service-color': meta.color }}><i className={`fa-solid ${meta.icon}`} />{meta.label}</span>;
 };
 
-const OrderCard = ({ order, onAssign, onStatus, riders }) => {
+const OrderCard = ({ order, onAssign, onStatus, riders, now }) => {
   const service = inferService(order);
+  // An order nobody has accepted yet shows how long it has waited and turns
+  // amber, then red - the silent replacement for a sound or pop-up.
+  const waiting = order.status === 'pending_rider' ? minutesWaiting(order, now) : null;
+  const level = waiting === null ? 'normal' : waitingLevel(waiting);
   const meta = SERVICE_META[service];
   const assignedRiderId = String(order.assignedRider?.id || '');
   const [selectedRiderId, setSelectedRiderId] = useState(assignedRiderId);
@@ -90,11 +95,12 @@ const OrderCard = ({ order, onAssign, onStatus, riders }) => {
   }[order.status];
 
   return (
-    <article className="admin-order-card" style={{ '--service-color': meta.color }}>
+    <article className={`admin-order-card${level === 'normal' ? '' : ` waiting-${level}`}`} style={{ '--service-color': meta.color }}>
       <div className="admin-order-card-heading">
         <div><strong>{orderNumber(order)}</strong><small>{new Date(order.createdAt).toLocaleString()}</small></div>
         <ServiceBadge service={service} />
       </div>
+      {waiting !== null && <p className={`admin-order-waiting ${level}`}><i className="fa-solid fa-clock" aria-hidden="true" /> Waiting {formatWaiting(waiting)}{hasAssignedRider(order) ? ' for the rider to accept' : ' - needs a rider'}</p>}
       <OrderCustomerDetails order={order} />
       <span className="admin-order-source">{order.source}</span>
       <p>{getItemSummary(order)}</p>
@@ -125,6 +131,7 @@ const OrderCard = ({ order, onAssign, onStatus, riders }) => {
 
 const LiveOrdersTab = ({ orders, onAssign, onStatus, riders }) => {
   const [statusFilter, setStatusFilter] = useState('all');
+  const now = useNow();
   const columns = [
     { key: 'pending', label: 'Pending', color: 'var(--color-warning)', matches: needsRiderAssignment },
     { key: 'awaiting', label: 'Awaiting Rider Response', color: '#3d9be9', matches: isAwaitingRiderResponse },
@@ -152,7 +159,7 @@ const LiveOrdersTab = ({ orders, onAssign, onStatus, riders }) => {
       return <section className="admin-order-column" key={column.key}>
         <div className="admin-column-heading"><i style={{ background: column.color }} /><h2>{column.label}</h2><span>{list.length}</span></div>
         <div className="admin-column-list">{list.length
-          ? list.map((order) => <OrderCard order={order} onAssign={onAssign} onStatus={onStatus} riders={riders} key={order.id} />)
+          ? list.map((order) => <OrderCard order={order} onAssign={onAssign} onStatus={onStatus} riders={riders} now={now} key={order.id} />)
           : <div className="admin-empty-column">No {column.label.toLowerCase()} orders</div>}
         </div>
       </section>;
@@ -914,6 +921,7 @@ const DeliveryAdminDashboard = () => {
     return () => controller.abort();
   }, [riderRefresh]);
   const pendingCount = orders.filter(needsRiderAssignment).length;
+  useTabTitleCount(pendingCount);
   const activeNav = useMemo(() => NAV_ITEMS.find((item) => item.key === activeTab), [activeTab]);
 
   const logout = () => { endSession(); navigate('/login', { replace: true }); };

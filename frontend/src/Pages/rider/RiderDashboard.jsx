@@ -12,6 +12,7 @@ import { getSessionUser, isAssignedTo, logout as endSession } from '../../utils/
 import { applyBackendTruth, useBackendOrders } from '../../hooks/useBackendOrders';
 import { apiAssetUrl } from '../../utils/catalog';
 import { remainsVisibleForHours } from '../../utils/backendTime';
+import { useTabTitleCount } from '../../utils/waiting';
 import { orderNumber } from '../../utils/orderNumber';
 import OrderChat from '../../components/common/OrderChat/OrderChat';
 
@@ -99,6 +100,7 @@ const RiderDashboard = () => {
   const selectedOrder = assignedOrders.find((order) => order.id === selectedOrderId);
   const sectionOrders = useMemo(() => orders.filter((order) => inferSection(order) === activeSection), [activeSection, orders]);
   const pendingCount = orders.filter((order) => order.status === 'pending_rider').length;
+  useTabTitleCount(pendingCount);
   const getCount = (section) => orders.filter((order) => inferSection(order) === section).length;
 
   const displayedOrder = (order) => {

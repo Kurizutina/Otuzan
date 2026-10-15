@@ -15,6 +15,7 @@ import { applyBackendTruth, useBackendOrders } from '../../../../hooks/useBacken
 import { toLocalNotificationShape, useBackendNotifications } from '../../../../hooks/useBackendNotifications';
 import OrderChat from '../../../common/OrderChat/OrderChat';
 import { happenedTodayInManila, remainsVisibleToday } from '../../../../utils/backendTime';
+import { formatWaiting, minutesWaiting } from '../../../../utils/waiting';
 import { orderNumber } from '../../../../utils/orderNumber';
 
 const NotificationIcon = () => (
@@ -285,7 +286,7 @@ const CustomerActivity = () => {
 
                         {order.status === 'pending_rider' && !order.assignedRider && (
                           <div className="rider-decision-state">
-                            <i className="fa-solid fa-clock" aria-hidden="true" /><div><strong>Waiting for a rider</strong><span>Tracking will begin after a rider accepts your order.</span></div>
+                            <i className="fa-solid fa-clock" aria-hidden="true" /><div><strong>Waiting for a rider{minutesWaiting(order, now) >= 1 ? ` · ${formatWaiting(minutesWaiting(order, now))}` : ''}</strong><span>Tracking will begin after a rider accepts your order.</span></div>
                           </div>
                         )}
 
