@@ -226,3 +226,9 @@
   .admin-quick-assign button { flex: 1 1 calc(50% - 8px); }
   .admin-order-actions button, .admin-pagination button { min-height: 44px; }
 }
+
+/* Customer block (stops a prank customer). */
+.admin-block-link { margin-left:10px; border:0; background:transparent; color:#7a5307; font:inherit; font-size:13px; font-weight:800; cursor:pointer; }
+.admin-blocked-badge { display:inline-block; margin-left:8px; padding:2px 8px; border-radius:9px; background:#fff0ee; color:#a93a25; font-size:11px; font-weight:800; }
+.admin-account-blocked td { background:#fffafa; }
+@media (max-width: 720px) { .admin-block-link, .admin-edit-link, .admin-delete-link { min-height:44px; } }

@@ -833,7 +833,7 @@ const CatalogTab = () => {
     </div></section>;
 };
 
-const AccountManagementTab = ({ role, onAccountsChanged }) => {
+export const AccountManagementTab = ({ role, onAccountsChanged }) => {
   const api = process.env.REACT_APP_API_URL || 'http://localhost:5000';
   const label = role === 'driver' ? 'Rider' : 'Customer';
   const [items, setItems] = useState([]);
@@ -896,11 +896,21 @@ const AccountManagementTab = ({ role, onAccountsChanged }) => {
       if (page > 1 && items.length === 1) setPage(page - 1); else await load();
     } catch (e) { setError(e.message); }
   };
+  // Customers only: a blocked account can't log in and is signed out everywhere
+  // (stops a prank customer; the rider's confirmation call is the other guard).
+  const toggleBlock = async (account) => {
+    const blocking = !account.BlockedAt;
+    if (blocking && !window.confirm(`Block ${account.UserName}? They will be signed out and won't be able to log in or order until you unblock them.`)) return;
+    try {
+      await request(`${role}/${account.UserID}/block`, { method: 'PATCH', body: JSON.stringify({ blocked: blocking }) });
+      await load();
+    } catch (e) { setError(e.message); }
+  };
   const beginEdit = (account) => { setEditing(account); setForm({ UserName: account.UserName || '', Email: account.Email || '', Contact: account.Contact || '', Address: account.Address || '', password: '' }); };
   return <section className="admin-catalog-manager">
     <div className="admin-catalog-toolbar"><input aria-label={`Search ${label.toLowerCase()}s`} value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} placeholder={`Search ${label.toLowerCase()}s...`} /><button type="button" className="primary" onClick={() => { resetForm(); setEditing({}); }}>+ Add {label}</button></div>
     {error && <p className="admin-catalog-error" role="alert">{error}</p>}
-    <div className="admin-catalog-layout"><div className="admin-table-wrap" tabIndex={0} role="region" aria-label="Table - scrolls sideways when wide"><table><thead><tr><th>{label}</th><th>Email</th><th>Contact</th><th>Address</th><th>Actions</th></tr></thead><tbody>{items.map((account) => <tr key={account.UserID}><td><strong>{account.UserName}</strong></td><td>{account.Email}</td><td>{account.Contact || '—'}</td><td><small className="admin-description">{account.Address || '—'}</small></td><td><button className="admin-edit-link" type="button" onClick={() => beginEdit(account)}>Edit</button><button className="admin-delete-link" type="button" onClick={() => remove(account)}>Delete</button></td></tr>)}</tbody></table>{loading ? <div className="admin-table-empty">Loading {label.toLowerCase()}s…</div> : !items.length && <div className="admin-page-empty"><i className="fa-solid fa-users" /><h2>No {label.toLowerCase()}s found</h2><p>{search ? 'Nothing matches the current search.' : `${label} accounts will show up here.`}</p></div>}<div className="admin-pagination"><span>{meta.total} total</span><button disabled={page <= 1} type="button" onClick={() => setPage(page - 1)}>Previous</button><span>Page {meta.current_page} of {meta.last_page}</span><button disabled={page >= meta.last_page} type="button" onClick={() => setPage(page + 1)}>Next</button></div></div>
+    <div className="admin-catalog-layout"><div className="admin-table-wrap" tabIndex={0} role="region" aria-label="Table - scrolls sideways when wide"><table><thead><tr><th>{label}</th><th>Email</th><th>Contact</th><th>Address</th><th>Actions</th></tr></thead><tbody>{items.map((account) => <tr key={account.UserID} className={account.BlockedAt ? 'admin-account-blocked' : ''}><td><strong>{account.UserName}</strong>{account.BlockedAt && <span className="admin-blocked-badge">Blocked</span>}</td><td>{account.Email}</td><td>{account.Contact || '—'}</td><td><small className="admin-description">{account.Address || '—'}</small></td><td><button className="admin-edit-link" type="button" onClick={() => beginEdit(account)}>Edit</button>{role === 'customer' && <button className="admin-block-link" type="button" onClick={() => toggleBlock(account)}>{account.BlockedAt ? 'Unblock' : 'Block'}</button>}<button className="admin-delete-link" type="button" onClick={() => remove(account)}>Delete</button></td></tr>)}</tbody></table>{loading ? <div className="admin-table-empty">Loading {label.toLowerCase()}s…</div> : !items.length && <div className="admin-page-empty"><i className="fa-solid fa-users" /><h2>No {label.toLowerCase()}s found</h2><p>{search ? 'Nothing matches the current search.' : `${label} accounts will show up here.`}</p></div>}<div className="admin-pagination"><span>{meta.total} total</span><button disabled={page <= 1} type="button" onClick={() => setPage(page - 1)}>Previous</button><span>Page {meta.current_page} of {meta.last_page}</span><button disabled={page >= meta.last_page} type="button" onClick={() => setPage(page + 1)}>Next</button></div></div>
       <form className="admin-catalog-form" onSubmit={save}><div className="admin-form-heading"><div><span>{label} management</span><h2>{editing ? `${editing.UserID ? 'Edit' : 'Add'} ${label}` : `${label} accounts`}</h2></div></div>{editing ? <><label>Full name<input required maxLength="100" value={form.UserName} onChange={(e) => setForm({ ...form, UserName: e.target.value })} /></label><label>Email<input required type="email" maxLength="255" value={form.Email} onChange={(e) => setForm({ ...form, Email: e.target.value })} /></label><label>Contact number<input required maxLength="50" value={form.Contact} onChange={(e) => setForm({ ...form, Contact: e.target.value })} /></label><label>Address<textarea maxLength="2000" value={form.Address} onChange={(e) => setForm({ ...form, Address: e.target.value })} /></label><label>{editing.UserID ? 'New password (optional)' : 'Password'}<input required={!editing.UserID} minLength="8" maxLength="72" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} /></label><div className="admin-form-actions"><button className="primary" disabled={saving} type="submit">{saving ? 'Saving...' : 'Save'}</button><button type="button" onClick={resetForm}>Cancel</button></div></> : <p>Create, update, search, and remove {label.toLowerCase()} accounts.</p>}</form>
     </div>
   </section>;

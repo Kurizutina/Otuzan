@@ -112,6 +112,7 @@ Route::middleware(['auth:sanctum', 'password.changed', 'throttle:600,1,api'])->g
         Route::get('/{role}', [AccountManagementController::class, 'index']);
         Route::post('/{role}', [AccountManagementController::class, 'store'])->middleware('throttle:30,1,accounts');
         Route::put('/{role}/{account}', [AccountManagementController::class, 'update'])->middleware('throttle:30,1,accounts');
+        Route::patch('/{role}/{account}/block', [AccountManagementController::class, 'block'])->middleware('throttle:30,1,accounts');
         Route::delete('/{role}/{account}', [AccountManagementController::class, 'destroy'])->middleware('throttle:30,1,accounts');
     });
 });

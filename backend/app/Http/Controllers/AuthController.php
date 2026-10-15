@@ -145,6 +145,12 @@ class AuthController extends Controller
             AuditLog::record('login failed', $request, ['email' => strtolower(trim($data['email']))]);
             return response()->json(['error' => 'invalid credentials'], 401);
         }
+        // Checked only after the password, so a stranger can't use the message to
+        // learn which accounts are blocked.
+        if ($user->BlockedAt) {
+            AuditLog::record('login refused: account blocked', $request, ['target' => $user->UserID]);
+            return response()->json(['error' => 'This account has been blocked. Please contact the shop.'], 403);
+        }
         return $this->authenticated($user);
     }
 

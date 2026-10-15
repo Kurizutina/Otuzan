@@ -29,8 +29,23 @@ class AccountManagementController extends Controller
 
         $perPage = min(max((int) $request->query('per_page', 10), 1), 50);
         return response()->json($query->paginate($perPage, [
-            'UserID', 'UserName', 'Contact', 'Role', 'Email', 'Address', 'CreatedAt',
+            'UserID', 'UserName', 'Contact', 'Role', 'Email', 'Address', 'CreatedAt', 'BlockedAt',
         ]));
+    }
+
+    // Stops a prank/abusive customer: a blocked account can't log in, and every
+    // session it has is ended now. Unblocking lets it log in again. Customers
+    // only - a rider who should stop working is removed instead.
+    public function block(Request $request, string $role, User $account): JsonResponse
+    {
+        $this->ensureAccountRole($role, $account);
+        abort_unless($role === 'customer', 404);
+        $data = $request->validate(['blocked' => ['required', 'boolean']]);
+
+        $account->update(['BlockedAt' => $data['blocked'] ? now() : null]);
+        if ($data['blocked']) $account->tokens()->delete();
+        AuditLog::record($data['blocked'] ? 'account blocked' : 'account unblocked', $request, ['target' => $account->UserID]);
+        return response()->json($this->accountResponse($account->fresh()));
     }
 
     public function store(Request $request, string $role): JsonResponse
@@ -102,7 +117,7 @@ class AccountManagementController extends Controller
 
     private function accountResponse(User $account): array
     {
-        return $account->only(['UserID', 'UserName', 'Contact', 'Role', 'Email', 'Address', 'CreatedAt']);
+        return $account->only(['UserID', 'UserName', 'Contact', 'Role', 'Email', 'Address', 'CreatedAt', 'BlockedAt']);
     }
 
     private function ensureManagedRole(string $role): void
