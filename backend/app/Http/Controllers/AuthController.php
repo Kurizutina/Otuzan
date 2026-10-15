@@ -86,20 +86,6 @@ class AuthController extends Controller
 
     private const EMAIL_FORMAT_RULE = 'regex:/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/i';
 
-    // Gmail's username rules, applied to every provider: 6-30 characters,
-    // letters/digits/periods only, no leading, trailing or consecutive periods.
-    private function emailUsernameRule(): \Closure
-    {
-        return function (string $attribute, mixed $value, \Closure $fail) {
-            // Non-strings are already rejected by the email rule.
-            if (!is_string($value)) return;
-            $local = strstr($value, '@', true);
-            if ($local === false || !preg_match('/^(?!\.)(?!.*\.\.)[a-z0-9.]{6,30}(?<!\.)$/i', $local)) {
-                $fail('Email username must be 6-30 characters using only letters, numbers and periods (no leading, trailing or repeated periods).');
-            }
-        };
-    }
-
     private function isBlockedEmail(string $email): bool
     {
         $domain = strtolower(substr(strrchr($email, '@'), 1));
@@ -113,7 +99,7 @@ class AuthController extends Controller
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'email' => ['bail', 'required', 'email', self::EMAIL_FORMAT_RULE, $this->emailUsernameRule(), 'max:255'],
+            'email' => ['bail', 'required', 'email', self::EMAIL_FORMAT_RULE, 'max:255'],
             'password' => self::passwordRule(),
             'userType' => ['required', 'in:student,non_student'],
             'username' => ['required', 'string', 'max:100', self::NAME_RULE],
@@ -280,14 +266,9 @@ class AuthController extends Controller
 
     public function updateProfile(Request $request): JsonResponse
     {
-        // Accounts created before the Gmail-style username rule keep working:
-        // it is only enforced when the email is actually being changed.
         $emailRules = ['bail', 'required', 'email', self::EMAIL_FORMAT_RULE, 'max:255'];
         $requestedEmail = $request->input('email');
         $emailChanged = !is_string($requestedEmail) || strtolower(trim($requestedEmail)) !== strtolower($request->user()->Email);
-        if ($emailChanged) {
-            $emailRules[] = $this->emailUsernameRule();
-        }
         $data = $request->validate([
             'username' => ['required', 'string', 'max:100', self::NAME_RULE],
             'email' => $emailRules,

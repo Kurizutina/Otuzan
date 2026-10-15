@@ -13,8 +13,7 @@ import { getDashboardPath, SESSION_EXPIRED_KEY, setSession } from '../../../util
 import {
   sanitizeContactNumber,
   validateAccessCode,
-  validateAdditionalFields,
-  validateEmailUsername
+  validateAdditionalFields
 } from '../../../utils/validation';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
@@ -170,11 +169,6 @@ const AuthPage = ({ mode }) => {
         setMessage
       )
     ) {
-      return;
-    }
-
-
-    if (mode === 'register' && !validateEmailUsername(email, setMessage)) {
       return;
     }
 

@@ -48,15 +48,15 @@ class ProfileApiTest extends TestCase
         $this->assertSame($user->Email, $user->fresh()->Email);
     }
 
-    public function test_accounts_with_a_legacy_email_can_still_edit_their_profile(): void
+    public function test_emails_with_symbols_or_short_names_are_accepted_in_the_profile(): void
     {
         $user = User::factory()->create(['Email' => 'old_name@example.com']);
         $token = $this->withToken($user->createToken('test')->plainTextToken);
 
         $token->patchJson('/api/auth/me', ['username' => 'Name', 'email' => 'old_name@example.com', 'address' => 'New Address'])->assertOk();
         $this->assertSame('New Address', $user->fresh()->Address);
-        // Changing the email still has to meet the new username rule.
-        $token->patchJson('/api/auth/me', ['username' => 'Name', 'email' => 'new_name@example.com', 'address' => 'New Address', 'currentPassword' => 'password'])->assertUnprocessable();
+        $token->patchJson('/api/auth/me', ['username' => 'Name', 'email' => 'jo-new@example.com', 'address' => 'New Address', 'currentPassword' => 'password'])->assertOk();
+        $this->assertSame('jo-new@example.com', $user->fresh()->Email);
     }
 
     public function test_profile_update_rejects_undeliverable_and_placeholder_emails(): void
@@ -70,8 +70,6 @@ class ProfileApiTest extends TestCase
         // Same placeholder blocklist as registration.
         $token->patchJson('/api/auth/me', [...$base, 'email' => 'someone@mailinator.com'])->assertUnprocessable();
         $token->patchJson('/api/auth/me', [...$base, 'email' => 'testing@test.com'])->assertUnprocessable();
-        // Gmail-style username rules apply to profile edits too.
-        $token->patchJson('/api/auth/me', [...$base, 'email' => 'real_person@example.com'])->assertUnprocessable();
         $this->assertSame($user->Email, $user->fresh()->Email);
 
         $token->patchJson('/api/auth/me', [...$base, 'email' => 'real.person@example.com'])->assertOk();

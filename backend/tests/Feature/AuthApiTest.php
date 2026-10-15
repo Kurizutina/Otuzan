@@ -90,21 +90,21 @@ class AuthApiTest extends TestCase
         $this->postJson('/api/auth/register', [...$data, 'contact' => '09123456789'])->assertCreated();
     }
 
-    public function test_registration_enforces_gmail_style_email_usernames(): void
+    public function test_registration_accepts_real_addresses_with_short_names_or_symbols(): void
     {
         $data = [
-            'username' => 'Ana Cruz', 'password' => 'secret123',
+            'username' => 'Ana Cruz', 'password' => 'Zebra2026x',
             'contact' => '09123456789', 'userType' => 'non_student',
         ];
 
-        foreach (['ana_cruz@example.com', 'ana+cruz@example.com', 'ana-cruz@example.com', 'ana!cruz@example.com',
-            '.anacruz@example.com', 'anacruz.@example.com', 'ana..cruz@example.com', 'ana@example.com',
-            str_repeat('a', 31).'@example.com'] as $email) {
+        foreach (['not-an-email', 'ana cruz@example.com', 'ana@@example.com', 'ana@example'] as $email) {
             $this->postJson('/api/auth/register', [...$data, 'email' => $email])->assertUnprocessable();
         }
         $this->assertDatabaseCount('Users', 0);
 
-        $this->postJson('/api/auth/register', [...$data, 'email' => 'ana.cruz.2024@example.com'])->assertCreated();
+        foreach (['jo@example.com', 'ana_cruz@example.com', 'ana-cruz@example.com', 'ana+shop@example.com'] as $i => $email) {
+            $this->withHeader('X-Forwarded-For', "10.9.{$i}.7")->postJson('/api/auth/register', [...$data, 'email' => $email])->assertCreated();
+        }
     }
 
     public function test_login_accepts_migrated_bcryptjs_password_hash_and_uses_the_account_role(): void

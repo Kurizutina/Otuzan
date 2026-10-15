@@ -3,20 +3,6 @@ import { ROLES, VALID_CODES } from '../config/roles';
 const CONTACT_NUMBER_PATTERN = /^09\d{9}$/;
 export const sanitizeContactNumber = (value) => String(value).replace(/\D/g, '').slice(0, 11);
 
-// Gmail username rules, applied to every provider: 6-30 characters of letters,
-// digits and periods, with no leading, trailing or repeated periods.
-const EMAIL_USERNAME_PATTERN = /^(?!\.)(?!.*\.\.)[a-z0-9.]{6,30}(?<!\.)$/i;
-
-export const validateEmailUsername = (email, setMessage) => {
-  const local = String(email).trim().split('@')[0];
-  if (EMAIL_USERNAME_PATTERN.test(local)) return true;
-  setMessage({
-    type: 'error',
-    text: 'Email username must be 6-30 characters using only letters, numbers and periods (no leading, trailing or repeated periods).'
-  });
-  return false;
-};
-
 export const validateContactNumber = (contactNumber, setMessage) => {
   if (CONTACT_NUMBER_PATTERN.test(contactNumber.trim())) return true;
   setMessage({
