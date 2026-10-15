@@ -198,6 +198,8 @@ const RiderDashboard = () => {
 
         <div className="rider-section-heading"><div><h2>{sections.find((section) => section.key === activeSection)?.label}</h2><p>{sectionOrders.length} customer order{sectionOrders.length === 1 ? '' : 's'}</p></div></div>
 
+        {progressError && !selectedOrder && <p className="rider-progress-error" role="alert">{progressError}</p>}
+
         {!sectionOrders.length ? (
           <div className="rider-empty-orders"><i className="fa-solid fa-receipt" /><h3>No orders in this section</h3><p>Orders assigned to you will appear here automatically.</p></div>
         ) : (
@@ -212,6 +214,8 @@ const RiderDashboard = () => {
                 <OrderCustomerDetails order={order} />
                 <div className="rider-order-preview"><span><i className="fa-solid fa-bag-shopping" /> {order.items?.reduce((total, item) => total + (item.quantity || 1), 0) || 0} item(s)</span><button type="button" onClick={() => setSelectedOrderId(order.id)}>View Order <i className="fa-solid fa-arrow-right" /></button></div>
                 {order.status === 'pending_rider' && <div className="rider-decision-buttons"><button type="button" className="rider-cancel" onClick={() => updateProgress(order, 'cancelled')}>Cancel</button><button type="button" className="rider-accept" onClick={() => updateProgress(order, 'confirmed')}>Confirm Order</button></div>}
+                {/* The next step is one tap from the list, so a rider on the road needn't open the order first. */}
+                {nextStatuses[order.status] && <div className="rider-decision-buttons"><button type="button" className="rider-advance" onClick={() => updateProgress(order, nextStatuses[order.status][0])}>{nextStatuses[order.status][1]}</button></div>}
               </article>
               );
             })}

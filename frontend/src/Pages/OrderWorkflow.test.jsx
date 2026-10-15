@@ -39,7 +39,7 @@ test.each(['admin', 'driver'])('saved profile refreshes %s cards and detail view
   const linked = { ...order, customerId: 42, customerName: 'Old Name', customerAddress: 'Old Address', assignedRider: { id: 7 } };
   localStorage.setItem('otuzanCustomerActivity', JSON.stringify({ orders: [linked], cart: [], notifications: [] }));
   render(<CustomerActivityProvider>{role === 'admin' ? <DeliveryAdminDashboard /> : <RiderDashboard />}</CustomerActivityProvider>);
-  if (role === 'admin') await screen.findByRole('option', { name: 'Rider Seven' });
+  if (role === 'admin') await screen.findByRole('button', { name: /Rider Seven/ });
   else fireEvent.click(screen.getByRole('button', { name: /View Order/ }));
   act(() => syncCustomerOrders({ id: 42, role: 'customer', username: 'Updated Full Name', address: 'Updated Address', email: 'updated@example.com' }));
   expect(screen.queryByText('Old Name')).not.toBeInTheDocument();
@@ -262,7 +262,7 @@ test('admin Live Orders list the most recently placed order first, regardless of
   localStorage.setItem('otuzanCustomerActivity', JSON.stringify({ orders: [older, newer], cart: [], notifications: [] }));
   signIn(1, 'admin');
   render(<CustomerActivityProvider><DeliveryAdminDashboard /></CustomerActivityProvider>);
-  await screen.findAllByRole('option', { name: 'Rider Seven' });
+  await screen.findAllByRole('button', { name: /Rider Seven/ });
   const ids = screen.getAllByText(/^ORD-(OLD|NEW)$/).map((node) => node.textContent);
   expect(ids).toEqual(['ORD-NEW', 'ORD-OLD']);
 });
@@ -283,18 +283,16 @@ test('admin explicitly assigns a waiting order and only the selected rider sees 
   localStorage.setItem('otuzanCustomerActivity', JSON.stringify({ orders: [{ ...order, status: 'pending_rider' }], cart: [], notifications: [] }));
   signIn(1, 'admin');
   const admin = render(<CustomerActivityProvider><DeliveryAdminDashboard /></CustomerActivityProvider>);
-  await screen.findByRole('option', { name: 'Rider Seven' });
+  await screen.findByRole('button', { name: /Rider Seven/ });
   expect(screen.queryByLabelText('Order status')).not.toBeInTheDocument();
   expect(screen.queryByRole('button', { name: /Mark delivered/i })).not.toBeInTheDocument();
-  expect(screen.getByRole('button', { name: 'Assign' })).toBeDisabled();
-  fireEvent.change(screen.getByLabelText('Assigned rider'), { target: { value: '7' } });
+  // With a small team each rider is a one-tap button; nothing is assigned until one is tapped.
   expect(saved().orders[0].assignedRider).toBeUndefined();
-  fireEvent.click(screen.getByRole('button', { name: 'Assign' }));
+  expect(screen.queryByRole('button', { name: 'Assign' })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Rider Seven' }));
   expect(saved().orders[0]).toMatchObject({ status: 'pending_rider', assignedRider: { id: 7, name: 'Rider Seven' } });
   expect(screen.getByRole('status')).toHaveTextContent('Assigned to Rider Seven');
-  expect(screen.getByRole('button', { name: 'Assign' })).toBeDisabled();
-  fireEvent.change(screen.getByLabelText('Assigned rider'), { target: { value: '8' } });
-  expect(saved().orders[0].assignedRider.id).toBe(7);
+  expect(screen.getByRole('button', { name: 'Rider Seven (assigned)' })).toBeDisabled();
   admin.unmount();
   // Rider Seven accepted and is on the way.
   localStorage.setItem('otuzanCustomerActivity', JSON.stringify({ ...saved(), orders: [{ ...saved().orders[0], status: 'out_for_delivery' }] }));
@@ -311,12 +309,24 @@ test('admin explicitly assigns a waiting order and only the selected rider sees 
   expect(saved().notifications[0].title).toBe('Order delivered');
 });
 
+// A rider on the road moves an order forward from the list itself; opening the
+// order first is no longer needed.
+test('a rider advances an order with one tap on its card', () => {
+  signIn(7, 'driver');
+  localStorage.setItem('otuzanCustomerActivity', JSON.stringify({
+    orders: [{ ...order, status: 'out_for_delivery', assignedRider: { id: 7, name: 'Rider Seven' } }], cart: [], notifications: []
+  }));
+  render(<CustomerActivityProvider><RiderDashboard /></CustomerActivityProvider>);
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole('button', { name: 'Mark Delivered' }));
+  expect(saved().orders[0].status).toBe('delivered');
+});
+
 test('admin can cancel an assigned order', async () => {
   signIn(1, 'admin');
   render(<CustomerActivityProvider><DeliveryAdminDashboard /></CustomerActivityProvider>);
-  await screen.findByRole('option', { name: 'Rider Seven' });
-  fireEvent.change(screen.getByLabelText('Assigned rider'), { target: { value: '7' } });
-  fireEvent.click(screen.getByRole('button', { name: 'Assign' }));
+  await screen.findByRole('button', { name: /Rider Seven/ });
+  fireEvent.click(screen.getByRole('button', { name: 'Rider Seven' }));
   fireEvent.click(screen.getByRole('button', { name: 'Decline' }));
   expect(saved().orders[0]).toMatchObject({ status: 'cancelled', assignedRider: { id: 7 } });
   expect(saved().notifications[0].message).not.toContain('by the rider');
@@ -325,7 +335,7 @@ test('admin can cancel an assigned order', async () => {
 test('admin cancelling an order with no rider tells the customer no riders are available', async () => {
   signIn(1, 'admin');
   render(<CustomerActivityProvider><DeliveryAdminDashboard /></CustomerActivityProvider>);
-  await screen.findByRole('option', { name: 'Rider Seven' });
+  await screen.findByRole('button', { name: /Rider Seven/ });
   fireEvent.click(screen.getByRole('button', { name: 'Decline' }));
   expect(saved().orders[0].status).toBe('cancelled');
   expect(saved().notifications[0].message).toContain('cancelled by the admin because no riders are currently available');
@@ -482,8 +492,23 @@ test('backend rider lookup failure prevents assigning an unavailable rider', asy
   global.fetch.mockRejectedValue(new Error('offline'));
   render(<CustomerActivityProvider><DeliveryAdminDashboard /></CustomerActivityProvider>);
   await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Unable to load registered riders'));
-  expect(screen.getByRole('button', { name: 'Assign' })).toBeDisabled();
+  expect(screen.queryByRole('group', { name: 'Assign to a rider' })).not.toBeInTheDocument();
   expect(saved().orders[0].assignedRider).toBeUndefined();
+});
+
+// Past a small team the one-tap buttons would crowd the card, so it falls back to
+// the dropdown + Assign button (nothing is assigned until Assign is pressed).
+test('a large team keeps the rider dropdown with an explicit Assign button', async () => {
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ riders: [1, 2, 3, 4, 5].map((id) => ({ id, name: `Rider ${id}` })) }) });
+  signIn(1, 'admin');
+  render(<CustomerActivityProvider><DeliveryAdminDashboard /></CustomerActivityProvider>);
+  await screen.findByRole('option', { name: 'Rider 5' });
+  expect(screen.queryByRole('group', { name: 'Assign to a rider' })).not.toBeInTheDocument();
+  expect(screen.getByRole('button', { name: 'Assign' })).toBeDisabled();
+  fireEvent.change(screen.getByLabelText('Assigned rider'), { target: { value: '5' } });
+  expect(saved().orders[0].assignedRider).toBeUndefined();
+  fireEvent.click(screen.getByRole('button', { name: 'Assign' }));
+  expect(saved().orders[0].assignedRider).toMatchObject({ id: 5, name: 'Rider 5' });
 });
 
 test('revenue tab renders the backend-aggregated total, not a locally-derived one', async () => {

@@ -75,6 +75,10 @@ const ServiceBadge = ({ service }) => {
   return <span className="admin-service-badge" style={{ '--service-color': meta.color }}><i className={`fa-solid ${meta.icon}`} />{meta.label}</span>;
 };
 
+// Up to this many riders, each gets a one-tap "Assign" button on the order card;
+// a bigger team falls back to the dropdown + Assign button.
+const QUICK_ASSIGN_MAX_RIDERS = 4;
+
 const OrderCard = ({ order, onAssign, onStatus, riders, now }) => {
   const service = inferService(order);
   // An order nobody has accepted yet shows how long it has waited and turns
@@ -106,7 +110,17 @@ const OrderCard = ({ order, onAssign, onStatus, riders, now }) => {
       <p>{getItemSummary(order)}</p>
       <div className="admin-order-total"><span>Order total</span><strong>{formatCurrency(getOrderTotal(order))}</strong></div>
 
-      {canAssign && (
+      {canAssign && riders.length > 0 && riders.length <= QUICK_ASSIGN_MAX_RIDERS && (
+        // A small team: one tap on the rider's name assigns (or reassigns) the order.
+        <div className="admin-quick-assign" role="group" aria-label="Assign to a rider">
+          <span>Assign to</span>
+          <div>{riders.map((rider) => {
+            const isCurrent = String(rider.id) === assignedRiderId;
+            return <button type="button" key={rider.id} className={isCurrent ? 'current' : ''} disabled={isCurrent} onClick={() => onAssign(order, rider)}>{isCurrent ? `${rider.name} (assigned)` : rider.name}</button>;
+          })}</div>
+        </div>
+      )}
+      {canAssign && riders.length > QUICK_ASSIGN_MAX_RIDERS && (
         <label className="admin-rider-select">
           <span>Assigned rider</span>
           <select value={selectedRiderId} onChange={(event) => setSelectedRiderId(event.target.value)}>
@@ -121,7 +135,7 @@ const OrderCard = ({ order, onAssign, onStatus, riders, now }) => {
       {canAssign && order.assignedRider && riders.some((rider) => String(rider.id) === assignedRiderId) && <p role="status">Assigned to {order.assignedRider.name}</p>}
       <div className="admin-order-actions">
         {order.status === 'pending_rider' && <button type="button" onClick={() => onStatus(order, 'cancelled')}>Decline</button>}
-        {canAssign && <button className="primary" type="button" disabled={!selectedRider || selectedRiderId === assignedRiderId} onClick={() => onAssign(order, selectedRider)}>Assign</button>}
+        {canAssign && riders.length > QUICK_ASSIGN_MAX_RIDERS && <button className="primary" type="button" disabled={!selectedRider || selectedRiderId === assignedRiderId} onClick={() => onAssign(order, selectedRider)}>Assign</button>}
         {service === 'bills' && nextAction && <button className="primary" type="button" onClick={() => onStatus(order, nextAction[0])}>{nextAction[1]}</button>}
         {order.status === 'cancelled' && <span className="admin-cancelled-state"><i className="fa-solid fa-circle-xmark" /> Cancelled</span>}
       </div>

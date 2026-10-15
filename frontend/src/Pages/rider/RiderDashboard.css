@@ -101,3 +101,12 @@
   .rider-dashboard-content { padding-top: 28px; }
   .rider-stat { padding: 11px 13px; }
 }
+
+/* Phones: this screen is used one-handed on the road, so every tap target is at
+   least 44px tall and the one-step "next" button spans the whole card. */
+@media (max-width: 720px) {
+  .rider-order-preview button { min-height: 44px; padding: 10px 14px; }
+  .rider-decision-buttons button { min-height: 48px; font-size: 16px; }
+  .rider-decision-buttons .rider-advance { grid-column: 1 / -1; }
+  .rider-service-tabs button, .rider-header-summary button { min-height: 44px; }
+}

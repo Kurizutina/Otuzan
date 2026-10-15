@@ -117,6 +117,11 @@
   border-radius: 10px;
   background: #fff;
 }
+.admin-quick-assign { margin: 8px 0; }
+.admin-quick-assign > span { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 800; color: #786b71; }
+.admin-quick-assign > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.admin-quick-assign button { min-height: 44px; padding: 8px 16px; border: 0; border-radius: 12px; background: var(--admin-accent); color: #fff; font: inherit; font-size: 15px; font-weight: 800; cursor: pointer; }
+.admin-quick-assign button.current { background: #e8e1e4; color: #6d6168; cursor: default; }
 .admin-order-waiting { display: flex; align-items: center; gap: 6px; margin: 6px 0 2px; font-size: 13px; font-weight: 800; color: #786b71; }
 .admin-order-waiting.amber { color: #a05a00; }
 .admin-order-waiting.red { color: #c0321a; }
@@ -210,4 +215,14 @@
   .admin-page-header { margin-bottom: 24px; }
   .admin-order-columns { gap: 20px; }
   .admin-stat-card, .admin-analytics-card { padding: 16px; }
+}
+
+/* Phones: the 2-column layouts above are for tablets and up. One column keeps
+   each order card full width so names, addresses and the Assign buttons stay readable. */
+@media (max-width: 720px) {
+  .admin-column-list { grid-template-columns: 1fr; }
+  .admin-payment-card { grid-template-columns: 1fr; }
+  .admin-stat-grid { grid-template-columns: 1fr; }
+  .admin-quick-assign button { flex: 1 1 calc(50% - 8px); }
+  .admin-order-actions button, .admin-pagination button { min-height: 44px; }
 }
