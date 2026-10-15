@@ -111,11 +111,13 @@
 .admin-catalog-toolbar input,
 .admin-catalog-toolbar select,
 .admin-catalog-form textarea,
-.admin-date-filter input[type="date"] {
+.admin-date-filter input[type="date"],
+.admin-history-search input {
   border-color: var(--admin-border);
   border-radius: 10px;
   background: #fff;
 }
+.admin-history-search input { width: 100%; max-width: 420px; padding: 9px 12px; border: 1px solid var(--admin-border); font: inherit; font-size: 14px; }
 
 .admin-order-columns { gap: 24px; }
 .admin-column-heading { margin-bottom: 13px; }

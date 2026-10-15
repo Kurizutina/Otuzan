@@ -228,6 +228,10 @@ const HistoryTab = () => {
   // indexAll) rather than filtered client-side, so picking a date reaches
   // every matching order, not just whatever's on the current page.
   const [dateFilter, setDateFilter] = useState('');
+  // Order number or customer name/email/contact, searched server-side
+  // (indexAll's `search`). Sent 300ms after typing stops.
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
@@ -235,7 +239,12 @@ const HistoryTab = () => {
 
   const [refreshCount, setRefreshCount] = useState(0);
 
-  useEffect(() => { setPage(1); }, [dateFilter, serviceFilter]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSearch(searchInput.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => { setPage(1); }, [dateFilter, serviceFilter, search]);
 
   useEffect(() => {
     const handleOrdersChanged = () => setRefreshCount((c) => c + 1);
@@ -252,8 +261,9 @@ const HistoryTab = () => {
     const controller = new AbortController();
     const api = process.env.REACT_APP_API_URL || 'http://localhost:5000';
     const params = new URLSearchParams({ status: 'delivered,cancelled', per_page: String(HISTORY_PAGE_SIZE), page: String(page) });
-    if (serviceFilter === 'bills') params.set('service', 'bills');
+    if (serviceFilter !== 'all') params.set('service', serviceFilter);
     if (dateFilter) params.set('date', dateFilter);
+    if (search) params.set('search', search);
     fetch(`${api}/api/admin/orders?${params}`, {
       headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
       signal: controller.signal
@@ -262,7 +272,7 @@ const HistoryTab = () => {
       .then((body) => { setResult(body); setError(''); })
       .catch(() => { if (!controller.signal.aborted) setError('Unable to load history right now. Try again shortly.'); });
     return () => controller.abort();
-  }, [page, dateFilter, serviceFilter, refreshCount]);
+  }, [page, dateFilter, serviceFilter, search, refreshCount]);
 
   // Admin dismisses an open post-delivery report: clears the flag server-
   // side (which also closes the reopened order chat again - both sides key
@@ -287,12 +297,14 @@ const HistoryTab = () => {
   if (error) return <section><div className="admin-table-empty">{error}</div></section>;
   if (!result) return <section><div className="admin-table-empty">Loading history…</div></section>;
 
-  const orders = result.data.map(toLocalOrderShape);
-  const rows = orders.filter((order) => serviceFilter === 'all' || inferService(order) === serviceFilter);
+  const rows = result.data.map(toLocalOrderShape);
   return <section>
     <DateFilter value={dateFilter} onChange={setDateFilter} today={today} />
+    <div className="admin-filter-row admin-history-search">
+      <input type="search" aria-label="Search history" placeholder="Search order # or customer name, email, contact" maxLength="100" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} />
+    </div>
     <div className="admin-filter-row">{['all', 'food', 'item', 'bills'].map((key) => <button className={serviceFilter === key ? 'active' : ''} type="button" onClick={() => setServiceFilter(key)} key={key}>{key === 'all' ? 'All services' : SERVICE_META[key].label}</button>)}</div>
-    <div className="admin-table-wrap"><table><thead><tr><th>Order ID</th><th>Service</th><th>Customer</th><th>Date</th><th>Total</th><th>Rider</th><th>Status</th></tr></thead><tbody>{rows.map((order) => <tr key={order.id}><td>{orderNumber(order)}</td><td><ServiceBadge service={inferService(order)} /></td><td><OrderCustomerDetails order={order} /></td><td>{new Date(order.createdAt).toLocaleString()}</td><td>{formatCurrency(getOrderTotal(order))}</td><td>{order.assignedRider?.name || '—'}</td><td><span className={`admin-history-status ${order.status}`}>{order.status}</span>{order.reportedAt && <button type="button" className="admin-history-report" title={order.reportReason || 'Customer reported a problem'} onClick={() => dismissReport(order)}><i className="fa-solid fa-flag" aria-hidden="true" /> Reported · Dismiss</button>}</td></tr>)}</tbody></table>{!rows.length && <div className="admin-table-empty">{dateFilter ? 'No completed transactions on that date.' : 'No completed transactions on this page.'}</div>}</div>
+    <div className="admin-table-wrap"><table><thead><tr><th>Order ID</th><th>Service</th><th>Customer</th><th>Date</th><th>Total</th><th>Rider</th><th>Status</th></tr></thead><tbody>{rows.map((order) => <tr key={order.id}><td>{orderNumber(order)}</td><td><ServiceBadge service={inferService(order)} /></td><td><OrderCustomerDetails order={order} /></td><td>{new Date(order.createdAt).toLocaleString()}</td><td>{formatCurrency(getOrderTotal(order))}</td><td>{order.assignedRider?.name || '—'}</td><td><span className={`admin-history-status ${order.status}`}>{order.status}</span>{order.reportedAt && <button type="button" className="admin-history-report" title={order.reportReason || 'Customer reported a problem'} onClick={() => dismissReport(order)}><i className="fa-solid fa-flag" aria-hidden="true" /> Reported · Dismiss</button>}</td></tr>)}</tbody></table>{!rows.length && <div className="admin-table-empty">{search ? 'No completed transactions match that search.' : dateFilter ? 'No completed transactions on that date.' : 'No completed transactions yet.'}</div>}</div>
     {result.last_page > 1 && (
       <div className="admin-pagination">
         <button type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>← Previous</button>
@@ -596,7 +608,37 @@ const RevenueBarGraph = ({ daily }) => {
   </svg>;
 };
 
+const PAYMENTS_PAGE_SIZE = 20;
+
+// "Needs review" comes from the live poll (?scope=active keeps every bill
+// still awaiting review, however old). "All payments" pages through every
+// bill on the server, since the live poll only keeps the last day's
+// verified/rejected ones.
+const usePaymentHistory = (enabled, page) => {
+  const revision = useReportRefresh();
+  const [result, setResult] = useState(null);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    if (!enabled) return undefined;
+    const controller = new AbortController();
+    const api = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+    const params = new URLSearchParams({ service: 'bills', per_page: String(PAYMENTS_PAGE_SIZE), page: String(page) });
+    fetch(`${api}/api/admin/orders?${params}`, {
+      headers: { Authorization: `Bearer ${sessionStorage.getItem('otuzanAuthenticated')}` },
+      signal: controller.signal
+    })
+      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then((body) => { setResult(body); setError(''); })
+      .catch(() => { if (!controller.signal.aborted) setError('Unable to load payments right now. Try again shortly.'); });
+    return () => controller.abort();
+  }, [enabled, page, revision]);
+  return { result, error };
+};
+
 const PaymentsTab = ({ orders, onPaymentStatus }) => {
+  const [view, setView] = useState('review');
+  const [page, setPage] = useState(1);
+  const history = usePaymentHistory(view === 'all', page);
   const [zoomedImage, setZoomedImage] = useState(null);
   const [paymentError, setPaymentError] = useState('');
   const [savingPayment, setSavingPayment] = useState(null);
@@ -629,15 +671,31 @@ const PaymentsTab = ({ orders, onPaymentStatus }) => {
     document.addEventListener('keydown', closeOnEscape);
     return () => document.removeEventListener('keydown', closeOnEscape);
   }, [zoomedImage]);
-  const payments = orders.filter((order) => inferService(order) === 'bills');
+  const payments = view === 'review'
+    ? orders.filter((order) => inferService(order) === 'bills' && order.status !== 'cancelled' && (order.details?.paymentStatus || 'pending') === 'pending')
+    : (history.result?.data || []).map(toLocalOrderShape);
+  const switchView = (next) => { setView(next); setPage(1); };
   return <>
+    <div className="admin-filter-row">
+      <button type="button" className={view === 'review' ? 'active' : ''} onClick={() => switchView('review')}>Needs review</button>
+      <button type="button" className={view === 'all' ? 'active' : ''} onClick={() => switchView('all')}>All payments</button>
+    </div>
     {paymentError && <p role="alert">{paymentError}</p>}
+    {view === 'all' && history.error && <p role="alert">{history.error}</p>}
+    {view === 'all' && !history.result && !history.error && <div className="admin-table-empty">Loading payments…</div>}
     <div className="admin-payment-list">{payments.map((order) => <article className="admin-payment-card" key={order.id}>
       <div><small>{orderNumber(order)}</small><OrderCustomerDetails order={order} /><span>{order.source}</span></div>
       <div><small>Uploaded bill</small><strong>{order.details?.billReceiptName || 'No receipt uploaded'}</strong><span>{order.details?.transferProofName || 'No transfer proof'}</span><div className="admin-payment-documents">{documentButton(order.details?.billReceiptUrl, order.details?.billReceiptName, order.details?.billReceiptType, 'receipt')}{documentButton(order.details?.transferProofUrl, order.details?.transferProofName, order.details?.transferProofType, 'proof of payment')}</div></div>
       <span className={`admin-payment-status ${order.details?.paymentStatus || 'pending'}`}>{order.details?.paymentStatus || 'pending'}</span>
       {(order.details?.paymentStatus || 'pending') === 'pending' && <div className="admin-payment-actions"><button className="primary" type="button" disabled={savingPayment !== null} onClick={() => savePayment(order, 'verified')}>Verify</button><button type="button" disabled={savingPayment !== null} onClick={() => savePayment(order, 'rejected')}>Reject</button></div>}
-    </article>)}{!payments.length && <div className="admin-page-empty"><i className="fa-solid fa-file-invoice" /><h2>No payment requests</h2><p>Customer bill-payment submissions will appear here.</p></div>}</div>
+    </article>)}{!payments.length && (view === 'review' || history.result) && <div className="admin-page-empty"><i className="fa-solid fa-file-invoice" /><h2>{view === 'review' ? 'No payments to review' : 'No payment requests'}</h2><p>{view === 'review' ? 'New bill-payment submissions will appear here. Open "All payments" for past ones.' : 'Customer bill-payment submissions will appear here.'}</p></div>}</div>
+    {view === 'all' && history.result?.last_page > 1 && (
+      <div className="admin-pagination">
+        <button type="button" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>← Previous</button>
+        <span>Page {history.result.current_page} of {history.result.last_page} ({history.result.total} total)</span>
+        <button type="button" disabled={page >= history.result.last_page} onClick={() => setPage((current) => current + 1)}>Next →</button>
+      </div>
+    )}
 
     {zoomedImage && (
       <div className="admin-image-zoom-backdrop" onMouseDown={(event) => { if (event.target === event.currentTarget) setZoomedImage(null); }}>

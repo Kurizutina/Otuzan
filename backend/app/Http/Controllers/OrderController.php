@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Support\AuditLog;
 use App\Support\ClientOrder;
 use App\Support\DeliveryFee;
+use App\Support\OrderSql;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -166,30 +167,56 @@ class OrderController extends Controller
 
     public function indexAll(Request $request): JsonResponse
     {
-        $request->validate(['date' => ['nullable', 'date_format:Y-m-d'], 'status' => ['nullable', 'string', 'max:200'], 'service' => ['nullable', 'string']]);
+        $request->validate([
+            'date' => ['nullable', 'date_format:Y-m-d'], 'status' => ['nullable', 'string', 'max:200'],
+            'service' => ['nullable', Rule::in(['food', 'item', 'bills'])], 'search' => ['nullable', 'string', 'max:100'],
+            'payment' => ['nullable', Rule::in(['pending'])],
+        ]);
         $query = Order::query()->with(['items.product.brand.service', 'user:'.self::CUSTOMER_FIELDS, 'rider:'.self::RIDER_FIELDS, 'payments'])->orderByDesc('OrderDate');
         // Comma-separated so the History tab can ask for delivered+cancelled
         // in one request instead of two - a single status still works
         // exactly as before.
         $status = $request->query('status');
         if ($status) $query->whereIn('DeliveryStatus', explode(',', $status));
-        if ($request->query('service') === 'bills') $query->whereHas('payments');
+        // Filtered here rather than on the loaded page, so a page is never
+        // half empty because most of its orders belong to another service.
+        $service = $request->query('service');
+        if ($service) $query->whereRaw(OrderSql::service().' = ?', [$service]);
+        if ($request->query('payment') === 'pending') {
+            $query->where('DeliveryStatus', '!=', 'cancelled')->whereHas('payments', fn ($payment) => $payment->where('PaymentStatus', 'pending'));
+        }
 
         // Exact-date filter (Y-m-d, Asia/Manila business calendar day - same
-        // convention as revenue()). OrderDate is stored UTC, so the day's
-        // boundaries are converted back to UTC before filtering rather than
-        // comparing the stored value against a naive date string.
+        // convention as revenue()).
         $date = $request->query('date');
-        if ($date) {
-            $dayStart = Carbon::createFromFormat('Y-m-d', $date, 'Asia/Manila')->startOfDay()->setTimezone('UTC');
-            $dayEnd = (clone $dayStart)->addDay();
-            $query->where('OrderDate', '>=', $dayStart)->where('OrderDate', '<', $dayEnd);
+        if ($date) $this->whereManilaDate($query, $date);
+
+        // History search: an order number ("123", "#123", "Order #123"), or
+        // part of the customer's name, email or contact number. A short
+        // number is an order number only - otherwise "12" would also match
+        // every phone number containing 12.
+        $search = trim((string) $request->query('search'));
+        if (preg_match('/^(?:order\s*)?#\s*(\d+)$|^(\d{1,6})$/i', $search, $match)) {
+            $query->where('OrderID', (int) ($match[1] ?: $match[2]));
+        } elseif ($search !== '') {
+            $like = '%'.addcslashes($search, '%_\\').'%';
+            $query->whereHas('user', fn ($user) => $user->where(fn ($fields) => $fields->where('UserName', 'like', $like)
+                ->orWhere('Email', 'like', $like)->orWhere('Contact', 'like', $like)));
         }
 
         $paginated = $query->paginate($this->applyScope($request, $query));
         $this->attachQueuePositions($paginated);
         $this->attachDeliveryEstimates($paginated);
         return response()->json($paginated);
+    }
+
+    // One Asia/Manila calendar day. OrderDate is stored UTC, so the day's
+    // boundaries are converted to UTC rather than comparing the stored value
+    // against a naive date string (and the OrderDate index still applies).
+    private function whereManilaDate($query, string $date): void
+    {
+        $dayStart = Carbon::createFromFormat('Y-m-d', $date, 'Asia/Manila')->startOfDay()->setTimezone('UTC');
+        $query->where('OrderDate', '>=', $dayStart)->where('OrderDate', '<', $dayStart->copy()->addDay());
     }
 
     // ?scope=active is what the live screens poll every 2 seconds: every
@@ -282,15 +309,33 @@ class OrderController extends Controller
     // chart.
     public function revenue(Request $request): JsonResponse
     {
-        $timezone = 'Asia/Manila';
+        $request->validate(['date' => ['nullable', 'date_format:Y-m-d']]);
         $requestedDate = $request->query('date');
 
-        $orders = Order::with(['items.product.brand.service', 'payments'])
-            ->where('DeliveryStatus', '!=', 'cancelled')
-            ->get();
+        // Summed in the database per Manila day and hour (OrderSql), so the
+        // tab costs the same whether there are a hundred orders or a hundred
+        // thousand - it used to load every order with its items into memory.
+        $day = OrderSql::manilaDay();
+        $hour = OrderSql::manilaHour();
+        $buckets = Order::where('DeliveryStatus', '!=', 'cancelled')
+            ->selectRaw("{$day} AS manila_day, {$hour} AS manila_hour, COUNT(*) AS order_count, SUM(ServiceFee) AS fees")
+            ->groupByRaw("{$day}, {$hour}")
+            ->toBase()->get();
+
+        // Classified per order in a derived table, then grouped by the plain
+        // column - avoids grouping by an expression that holds subqueries.
+        $perOrder = Order::where('DeliveryStatus', '!=', 'cancelled')
+            ->selectRaw(OrderSql::service().' AS order_service, ServiceFee');
+        if ($requestedDate) $this->whereManilaDate($perOrder, $requestedDate);
+        $feesByService = DB::query()->fromSub($perOrder->toBase(), 'per_order')
+            ->selectRaw('order_service, SUM(ServiceFee) AS fees')
+            ->groupBy('order_service')->pluck('fees', 'order_service');
 
         $daily = [];
         $byService = ['food' => 0.0, 'item' => 0.0, 'bills' => 0.0];
+        foreach ($feesByService as $name => $fees) {
+            $byService[$name] = (float) $fees;
+        }
         $total = 0.0;
         $orderCount = 0;
         // Peak ordering time (Layer 1 analytics) - always all-time, same as
@@ -302,22 +347,18 @@ class OrderController extends Controller
         $hourCounts = array_fill(0, 24, 0);
         $dayCounts = array_fill(0, 7, 0);
 
-        foreach ($orders as $order) {
-            $fee = (float) $order->ServiceFee;
-            $placedAt = Carbon::parse($order->OrderDate, 'UTC')->setTimezone($timezone);
-            $date = $placedAt->toDateString();
-            $daily[$date] = ($daily[$date] ?? 0) + $fee;
-            $hourCounts[$placedAt->hour]++;
-            $dayCounts[$placedAt->dayOfWeek]++;
+        foreach ($buckets as $bucket) {
+            $date = (string) $bucket->manila_day;
+            $count = (int) $bucket->order_count;
+            $fees = (float) $bucket->fees;
+            $daily[$date] = ($daily[$date] ?? 0) + $fees;
+            $hourCounts[(int) $bucket->manila_hour] += $count;
+            $dayCounts[Carbon::parse($date)->dayOfWeek] += $count;
 
             if ($requestedDate && $date !== $requestedDate) continue;
 
-            $total += $fee;
-            $orderCount++;
-            $service = $order->payments->isNotEmpty()
-                ? 'bills'
-                : ($order->OrderSnapshot['section'] ?? ($order->items->first()?->product?->brand?->service?->ServiceType === 'item' ? 'item' : 'food'));
-            $byService[$service] = ($byService[$service] ?? 0) + $fee;
+            $total += $fees;
+            $orderCount += $count;
         }
 
         ksort($daily);
@@ -355,17 +396,16 @@ class OrderController extends Controller
     {
         $now = Carbon::now();
 
-        // Filtered in PHP rather than a SQL HAVING clause on the withCount
-        // subquery column - portable across MySQL (real dev DB) and SQLite
-        // (tests), which disagrees with MySQL on referencing a subquery
-        // alias in HAVING.
-        $customers = User::where('Role', 'customer')
-            ->withCount(['orders as frequency' => fn ($query) => $query->where('DeliveryStatus', '!=', 'cancelled')])
-            ->withSum(['orders as monetary' => fn ($query) => $query->where('DeliveryStatus', '!=', 'cancelled')], 'TotalPrice')
-            ->withMax(['orders as last_order_date' => fn ($query) => $query->where('DeliveryStatus', '!=', 'cancelled')], 'OrderDate')
-            ->get()
-            ->filter(fn ($customer) => $customer->frequency > 0)
-            ->values();
+        // whereHas (WHERE EXISTS) rather than a HAVING clause on the
+        // withCount alias - portable across MySQL and SQLite (tests), and it
+        // skips customers who never ordered before loading them at all.
+        $counted = fn ($query) => $query->where('DeliveryStatus', '!=', 'cancelled');
+        $customers = User::select(['UserID', 'UserName', 'Email'])->where('Role', 'customer')
+            ->whereHas('orders', $counted)
+            ->withCount(['orders as frequency' => $counted])
+            ->withSum(['orders as monetary' => $counted], 'TotalPrice')
+            ->withMax(['orders as last_order_date' => $counted], 'OrderDate')
+            ->get();
 
         if ($customers->isEmpty()) {
             return response()->json(['customers' => [], 'segments' => [], 'totalCustomers' => 0]);
@@ -381,11 +421,17 @@ class OrderController extends Controller
         // exist - a handful of test accounts and a thousand real ones both
         // still produce a meaningful 1-5 spread instead of everyone landing
         // in the same bucket.
+        // Rank = position of the value's first occurrence in the sorted list,
+        // looked up from a map (searching the list per customer was O(n^2)).
         $score = function ($collection, string $field, bool $lowerIsBetter = false) {
-            $sorted = $collection->pluck($field)->sort()->values();
+            $sorted = $collection->pluck($field)->map(fn ($value) => (float) $value)->sort()->values();
             $count = $sorted->count();
-            return function ($value) use ($sorted, $count, $lowerIsBetter) {
-                $rank = $sorted->search($value);
+            $firstRank = [];
+            foreach ($sorted as $index => $value) {
+                $firstRank[(string) $value] ??= $index;
+            }
+            return function ($value) use ($firstRank, $count, $lowerIsBetter) {
+                $rank = $firstRank[(string) (float) $value];
                 $percentile = $count > 1 ? $rank / ($count - 1) : 1;
                 $quintile = min(5, (int) floor($percentile * 5) + 1);
                 return $lowerIsBetter ? 6 - $quintile : $quintile;
@@ -450,11 +496,11 @@ class OrderController extends Controller
         $windowSize = 7;
         $today = Carbon::now($timezone)->startOfDay();
 
-        $dailyCounts = [];
-        Order::where('DeliveryStatus', '!=', 'cancelled')->pluck('OrderDate')->each(function ($orderDate) use (&$dailyCounts, $timezone) {
-            $date = Carbon::parse($orderDate, 'UTC')->setTimezone($timezone)->toDateString();
-            $dailyCounts[$date] = ($dailyCounts[$date] ?? 0) + 1;
-        });
+        $day = OrderSql::manilaDay();
+        $dailyCounts = Order::where('DeliveryStatus', '!=', 'cancelled')
+            ->selectRaw("{$day} AS manila_day, COUNT(*) AS order_count")
+            ->groupByRaw($day)->toBase()->pluck('order_count', 'manila_day')
+            ->map(fn ($count) => (int) $count)->all();
         ksort($dailyCounts);
 
         // Zero-filled calendar days, not just days that happened to have an
