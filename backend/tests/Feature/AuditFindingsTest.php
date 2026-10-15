@@ -95,20 +95,19 @@ class AuditFindingsTest extends TestCase
         $this->assertTrue(Hash::check('NewSecret99', $customer->fresh()->PasswordHash));
     }
 
-    public function test_changing_the_email_requires_the_current_password(): void
+    public function test_the_email_cannot_be_changed_from_the_profile_even_with_the_right_password(): void
     {
         $customer = $this->user('customer', 'gina.audit@example.com');
         $token = $this->token($customer);
-        $profile = ['username' => 'Gina', 'email' => 'gina.changed@example.com', 'address' => 'PNR Main'];
+        $profile = ['username' => 'Gina', 'address' => 'PNR Main'];
 
-        $this->as($token)->patchJson('/api/auth/me', $profile)->assertStatus(422);
-        $this->as($token)->patchJson('/api/auth/me', $profile + ['currentPassword' => 'wrong-one1'])->assertStatus(422);
+        $this->as($token)->patchJson('/api/auth/me', $profile + ['email' => 'gina.changed@example.com', 'currentPassword' => 'secret123'])->assertStatus(422);
         $this->assertSame('gina.audit@example.com', $customer->fresh()->Email);
 
-        // Keeping the same email needs no password; changing it with the right one works.
+        // The account's own email needs no password, and a password change still does.
         $this->as($token)->patchJson('/api/auth/me', ['email' => 'gina.audit@example.com'] + $profile)->assertOk();
-        $this->as($token)->patchJson('/api/auth/me', $profile + ['currentPassword' => 'secret123'])->assertOk();
-        $this->assertSame('gina.changed@example.com', $customer->fresh()->Email);
+        $this->as($token)->patchJson('/api/auth/me', $profile + ['password' => 'Changed123'])->assertStatus(422);
+        $this->as($token)->patchJson('/api/auth/me', $profile + ['password' => 'Changed123', 'currentPassword' => 'secret123'])->assertOk();
     }
 
     public function test_S2_change_password_revokes_other_sessions_but_keeps_the_current_one(): void

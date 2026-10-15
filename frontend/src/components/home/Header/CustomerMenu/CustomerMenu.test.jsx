@@ -19,26 +19,29 @@ afterEach(() => { delete global.fetch; localStorage.clear(); sessionStorage.clea
 
 test('loads database values and caches only the confirmed server response after save', async () => {
   localStorage.setItem('otuzanCustomerActivity', JSON.stringify({ orders: [{ id: 'order', customerId: user.id, customerName: user.username, assignedRider: { id: 8 } }] }));
-  const updated = { ...user, username: 'New Full Name', email: 'new@example.com', address: 'New Address' };
+  const updated = { ...user, username: 'New Full Name', address: 'New Address' };
   global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ user: updated }) });
   await openEditor();
   expect(screen.getByLabelText('Full name')).toHaveValue('Saved Name');
   fireEvent.change(screen.getByLabelText('Full name'), { target: { value: updated.username } });
-  expect(screen.queryByPlaceholderText('Required to change your email or password')).not.toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText('Email address'), { target: { value: updated.email } });
-  // A changed email alone already asks for the current password.
-  fireEvent.change(screen.getByPlaceholderText('Required to change your email or password'), { target: { value: 'oldpass123' } });
-  fireEvent.change(screen.getByLabelText('Delivery address'), { target: { value: updated.address } });
+  // The email is shown but cannot be edited here; the shop changes it.
+  expect(screen.getByDisplayValue(user.email)).toHaveAttribute('readonly');
+  expect(screen.getByText('To change your email, please contact the shop.')).toBeInTheDocument();
+  expect(screen.queryByPlaceholderText('Required to change your password')).not.toBeInTheDocument();
   fireEvent.change(screen.getByPlaceholderText('Leave blank to keep current password'), { target: { value: 'changed123' } });
+  // A new password asks for the current one.
+  fireEvent.change(screen.getByPlaceholderText('Required to change your password'), { target: { value: 'oldpass123' } });
+  fireEvent.change(screen.getByLabelText('Delivery address'), { target: { value: updated.address } });
   fireEvent.click(screen.getByRole('button', { name: 'Save Changes' }));
   await screen.findByText('Profile updated successfully.');
   const request = global.fetch.mock.calls[1][1];
   expect(request.method).toBe('PATCH');
   expect(request.headers.Authorization).toBe('Bearer test-token');
   expect(JSON.parse(request.body)).toMatchObject({ username: updated.username, password: 'changed123', currentPassword: 'oldpass123' });
+  expect(JSON.parse(request.body)).not.toHaveProperty('email');
   expect(JSON.parse(localStorage.getItem('otuzanCustomerProfile'))).toEqual(updated);
   expect(JSON.parse(sessionStorage.getItem('otuzanUser'))).toEqual(updated);
-  expect(localStorage.getItem('otuzanCustomerAddress:new@example.com')).toBe('New Address');
+  expect(localStorage.getItem('otuzanCustomerAddress:saved@example.com')).toBe('New Address');
   expect(screen.getByPlaceholderText('Leave blank to keep current password')).toHaveValue('');
   expect(JSON.parse(localStorage.getItem('otuzanCustomerActivity')).orders[0]).toMatchObject({ customerName: updated.username, customerAddress: updated.address, assignedRider: { id: 8 } });
 });

@@ -42,8 +42,6 @@ const CustomerMenu = ({ icon }) => {
     currentPassword: '',
     ...getSavedProfile()
   }));
-  // Changing the login email needs the current password, like a new password does.
-  const emailChanged = (profile.email || '').trim().toLowerCase() !== (getSavedProfile().email || '').toLowerCase();
 
   useEffect(() => {
     const handlePointerDown = (event) => {
@@ -127,8 +125,7 @@ const CustomerMenu = ({ icon }) => {
 
     const persistedProfile = {
       username: profile.username.trim(),
-      address: profile.address.trim(),
-      email: profile.email.trim()
+      address: profile.address.trim()
     };
     if (profile.password) {
       if (passwordProblem(profile.password)) {
@@ -137,7 +134,7 @@ const CustomerMenu = ({ icon }) => {
       }
       persistedProfile.password = profile.password;
     }
-    if (profile.password || emailChanged) persistedProfile.currentPassword = profile.currentPassword;
+    if (profile.password) persistedProfile.currentPassword = profile.currentPassword;
     setIsSaving(true);
     try {
       const response = await fetch(`${API_URL}/api/auth/me`, {
@@ -237,7 +234,8 @@ const CustomerMenu = ({ icon }) => {
 
                 <label className="profile-field">
                   <span>Email address</span>
-                  <div><i className="fa-solid fa-envelope" aria-hidden="true" /><input required type="email" value={profile.email} onChange={(event) => updateProfile('email', event.target.value)} placeholder="Enter email address" /></div>
+                  <div><i className="fa-solid fa-envelope" aria-hidden="true" /><input type="email" value={profile.email} readOnly aria-readonly="true" /></div>
+                  <small>To change your email, please contact the shop.</small>
                 </label>
 
                 <label className="profile-field profile-address-field">
@@ -257,12 +255,12 @@ const CustomerMenu = ({ icon }) => {
                   <small>{PASSWORD_HINT}</small>
                 </label>
 
-                {(profile.password || emailChanged) && (
+                {profile.password && (
                   <label className="profile-field profile-password-field">
                     <span>Current password</span>
                     <div>
                       <i className="fa-solid fa-key" aria-hidden="true" />
-                      <input type="password" required value={profile.currentPassword} onChange={(event) => updateProfile('currentPassword', event.target.value)} placeholder="Required to change your email or password" autoComplete="current-password" />
+                      <input type="password" required value={profile.currentPassword} onChange={(event) => updateProfile('currentPassword', event.target.value)} placeholder="Required to change your password" autoComplete="current-password" />
                     </div>
                   </label>
                 )}

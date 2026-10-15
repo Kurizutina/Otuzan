@@ -17,10 +17,10 @@ class ProfileApiTest extends TestCase
         $other = User::factory()->create();
         $oldHash = $user->PasswordHash;
         $this->withToken($user->createToken('test')->plainTextToken)->patchJson('/api/auth/me', [
-            'username' => 'New Full Name', 'email' => 'NEW.USER@example.com', 'address' => 'New Address', 'currentPassword' => 'password',
+            'username' => 'New Full Name', 'address' => 'New Address',
             'password' => '', 'id' => $other->UserID, 'role' => 'admin',
         ])->assertOk()->assertJsonPath('user.id', $user->UserID)->assertJsonPath('user.role', 'customer');
-        $this->assertDatabaseHas('Users', ['UserID' => $user->UserID, 'UserName' => 'New Full Name', 'Email' => 'new.user@example.com', 'Address' => 'New Address']);
+        $this->assertDatabaseHas('Users', ['UserID' => $user->UserID, 'UserName' => 'New Full Name', 'Email' => $user->Email, 'Address' => 'New Address']);
         $this->assertSame($oldHash, $user->fresh()->PasswordHash);
         $this->assertSame($other->UserName, $other->fresh()->UserName);
     }
@@ -29,50 +29,43 @@ class ProfileApiTest extends TestCase
     {
         $user = User::factory()->create();
         $this->withToken($user->createToken('test')->plainTextToken)->patchJson('/api/auth/me', [
-            'username' => 'Updated Name', 'email' => 'updated@example.com', 'address' => 'New Address', 'password' => 'changed123', 'currentPassword' => 'password',
+            'username' => 'Updated Name', 'address' => 'New Address', 'password' => 'changed123', 'currentPassword' => 'password',
         ])->assertOk()->assertJsonMissingPath('user.password')->assertJsonMissingPath('user.PasswordHash');
         $this->assertTrue(Hash::check('changed123', $user->fresh()->PasswordHash));
-        $this->postJson('/api/auth/login', ['email' => 'updated@example.com', 'password' => 'changed123', 'role' => 'customer'])->assertOk();
-        $this->postJson('/api/auth/login', ['email' => 'updated@example.com', 'password' => 'password', 'role' => 'customer'])->assertUnauthorized();
+        $this->postJson('/api/auth/login', ['email' => $user->Email, 'password' => 'changed123', 'role' => 'customer'])->assertOk();
+        $this->postJson('/api/auth/login', ['email' => $user->Email, 'password' => 'password', 'role' => 'customer'])->assertUnauthorized();
     }
 
-    public function test_unauthenticated_duplicate_and_invalid_updates_do_not_change_profile(): void
+    public function test_unauthenticated_and_invalid_updates_do_not_change_profile(): void
     {
         $user = User::factory()->create();
-        $other = User::factory()->create();
-        $data = ['username' => 'New Name', 'email' => $other->Email, 'address' => 'New Address', 'currentPassword' => 'password'];
+        $data = ['username' => 'New Name', 'address' => 'New Address'];
         $this->patchJson('/api/auth/me', $data)->assertUnauthorized();
-        $this->withToken($user->createToken('test')->plainTextToken)->patchJson('/api/auth/me', $data)->assertConflict();
-        $this->patchJson('/api/auth/me', ['username' => ' ', 'email' => 'invalid', 'address' => ''])->assertUnprocessable();
+        $this->withToken($user->createToken('test')->plainTextToken)
+            ->patchJson('/api/auth/me', ['username' => ' ', 'address' => ''])->assertUnprocessable();
         $this->assertSame($user->UserName, $user->fresh()->UserName);
         $this->assertSame($user->Email, $user->fresh()->Email);
     }
 
-    public function test_emails_with_symbols_or_short_names_are_accepted_in_the_profile(): void
-    {
-        $user = User::factory()->create(['Email' => 'old_name@example.com']);
-        $token = $this->withToken($user->createToken('test')->plainTextToken);
-
-        $token->patchJson('/api/auth/me', ['username' => 'Name', 'email' => 'old_name@example.com', 'address' => 'New Address'])->assertOk();
-        $this->assertSame('New Address', $user->fresh()->Address);
-        $token->patchJson('/api/auth/me', ['username' => 'Name', 'email' => 'jo-new@example.com', 'address' => 'New Address', 'currentPassword' => 'password'])->assertOk();
-        $this->assertSame('jo-new@example.com', $user->fresh()->Email);
-    }
-
-    public function test_profile_update_rejects_undeliverable_and_placeholder_emails(): void
+    // The email is the login and the reset address; a typo would lock the
+    // customer out, so only an admin (Accounts) can change it.
+    public function test_a_customer_cannot_change_their_email_from_the_profile(): void
     {
         $user = User::factory()->create();
+        $other = User::factory()->create();
         $token = $this->withToken($user->createToken('test')->plainTextToken);
         $base = ['username' => 'Name', 'address' => 'Address', 'currentPassword' => 'password'];
 
-        // No dot/real TLD - syntactically "valid" but can never receive mail.
-        $token->patchJson('/api/auth/me', [...$base, 'email' => 'a@ce'])->assertUnprocessable();
-        // Same placeholder blocklist as registration.
-        $token->patchJson('/api/auth/me', [...$base, 'email' => 'someone@mailinator.com'])->assertUnprocessable();
-        $token->patchJson('/api/auth/me', [...$base, 'email' => 'testing@test.com'])->assertUnprocessable();
+        foreach (['real.person@example.com', $other->Email, 'a@ce', 'someone@mailinator.com'] as $email) {
+            $token->patchJson('/api/auth/me', [...$base, 'email' => $email])
+                ->assertUnprocessable()->assertJsonPath('error', 'Your email address cannot be changed here. Please contact the shop.');
+        }
+        $token->patchJson('/api/auth/me', [...$base, 'email' => ['array@example.com']])->assertUnprocessable();
         $this->assertSame($user->Email, $user->fresh()->Email);
+        $this->assertSame($user->UserName, $user->fresh()->UserName);
 
-        $token->patchJson('/api/auth/me', [...$base, 'email' => 'real.person@example.com'])->assertOk();
-        $this->assertSame('real.person@example.com', $user->fresh()->Email);
+        // Sending the account's own email, in any case, is harmless.
+        $token->patchJson('/api/auth/me', [...$base, 'email' => strtoupper($user->Email)])->assertOk();
+        $this->assertSame($user->Email, $user->fresh()->Email);
     }
 }

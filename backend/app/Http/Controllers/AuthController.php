@@ -273,39 +273,28 @@ class AuthController extends Controller
 
     public function updateProfile(Request $request): JsonResponse
     {
-        $emailRules = ['bail', 'required', 'email', self::EMAIL_FORMAT_RULE, 'max:255'];
-        $requestedEmail = $request->input('email');
-        $emailChanged = !is_string($requestedEmail) || strtolower(trim($requestedEmail)) !== strtolower($request->user()->Email);
         $data = $request->validate([
             'username' => ['required', 'string', 'max:100', self::NAME_RULE],
-            'email' => $emailRules,
+            // Sending the account's own email is harmless (older screens did);
+            // anything else is refused below.
+            'email' => ['nullable', 'string', 'max:255'],
             'address' => ['required', 'string', 'max:2000'],
             'password' => [...self::passwordRule(required: false), 'different:currentPassword'],
-            // The email is the login and the password-reset address, so
-            // changing it needs the current password just like the password does.
-            'currentPassword' => [$emailChanged ? 'required' : 'required_with:password', 'nullable', 'string'],
+            'currentPassword' => ['required_with:password', 'nullable', 'string'],
         ], ['username.not_regex' => self::NAME_MESSAGE] + self::PASSWORD_MESSAGES, ['username' => 'full name', 'currentPassword' => 'current password']);
         $user = $request->user();
-        if ((!empty($data['password']) || $emailChanged) && !password_verify((string) $data['currentPassword'], $user->PasswordHash)) {
+        // The email is the login and the reset address, and nothing proves a
+        // new one is real or typed right: a typo would lock the customer out.
+        // Customers ask the shop instead; an admin edits it in Accounts.
+        if (isset($data['email']) && strtolower(trim($data['email'])) !== strtolower($user->Email)) {
+            return response()->json(['error' => 'Your email address cannot be changed here. Please contact the shop.'], 422);
+        }
+        if (!empty($data['password']) && !password_verify((string) $data['currentPassword'], $user->PasswordHash)) {
             return response()->json(['error' => 'The current password is incorrect.'], 422);
         }
-        $email = strtolower(trim($data['email']));
-        if ($this->isBlockedEmail($email)) {
-            return response()->json(['error' => 'Please use a real, permanent email address.'], 422);
-        }
-        if (User::where('Email', $email)->where('UserID', '!=', $user->UserID)->exists()) {
-            return response()->json(['error' => 'email is already registered'], 409);
-        }
-        $changes = [
-            'UserName' => trim($data['username']), 'Email' => $email,
-            'Address' => trim($data['address']),
-        ];
+        $changes = ['UserName' => trim($data['username']), 'Address' => trim($data['address'])];
         if (!empty($data['password'])) $changes['PasswordHash'] = Hash::make($data['password']);
-        try {
-            $user->update($changes);
-        } catch (UniqueConstraintViolationException $error) {
-            return response()->json(['error' => 'email is already registered'], 409);
-        }
+        $user->update($changes);
         if (!empty($data['password'])) $this->revokeOtherSessions($request);
         return response()->json(['user' => $user->fresh()->profile()]);
     }
