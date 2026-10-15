@@ -170,6 +170,14 @@ const RiderDashboard = () => {
     return () => document.removeEventListener('keydown', closeOnEscape);
   }, [zoomedImage]);
 
+  // Escape closes the order-details window (an enlarged photo on top closes first).
+  useEffect(() => {
+    if (!selectedOrderId || zoomedImage) return undefined;
+    const closeOnEscape = (event) => { if (event.key === 'Escape') setSelectedOrderId(null); };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [selectedOrderId, zoomedImage]);
+
   const logout = () => {
     endSession();
     navigate('/login', { replace: true });

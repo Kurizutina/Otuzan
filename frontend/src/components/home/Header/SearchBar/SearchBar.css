@@ -68,7 +68,7 @@
 }
 
 .home-search input::placeholder {
-  color: #999999;
+  color: #6a5e64;
 }
 
 
@@ -91,7 +91,7 @@
 
   background: transparent;
 
-  color: #888888;
+  color: #6a5e64;
 
   cursor: pointer;
 }

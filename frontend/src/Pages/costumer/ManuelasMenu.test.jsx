@@ -31,3 +31,12 @@ test('show more expands a menu category without mounting the whole catalogue ini
   fireEvent.click(screen.getAllByRole('button', { name: /Show .* more/ })[0]);
   expect(document.querySelectorAll('.jollibee-product-card').length).toBeGreaterThan(initialCards);
 });
+
+test('the cart sheet opens from the header and Escape closes it', () => {
+  render(<CustomerActivityProvider><ManuelasMenu /></CustomerActivityProvider>);
+  const sheet = screen.getByRole('complementary');
+  fireEvent.click(screen.getByRole('button', { name: /^Cart/ }));
+  expect(sheet).toHaveClass('is-open');
+  fireEvent.keyDown(document, { key: 'Escape' });
+  expect(sheet).not.toHaveClass('is-open');
+});

@@ -56,7 +56,7 @@
 .payment-qr-panel p,
 .payment-upload-heading p {
   margin-top: 5px;
-  color: #81757b;
+  color: #6a5e64;
   font-size: 13px;
 }
 
@@ -307,7 +307,7 @@
 .payment-upload-copy small {
   margin-top: 3px;
   overflow: hidden;
-  color: #81757b;
+  color: #6a5e64;
   font-size: 11px;
   text-overflow: ellipsis;
   white-space: nowrap;

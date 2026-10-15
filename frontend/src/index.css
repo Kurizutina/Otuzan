@@ -8,9 +8,11 @@
      under dark text - never under white.
 
      Palette notes:
-     - --color-primary (#b8580a) is the deep orange: 4.74:1 against white in
-       both directions, so it safely serves buttons (white text on it), links
-       and headings (it as text on white) - WCAG AA for normal text.
+     - --color-primary (#a85008) is the deep orange: about 5.5:1 against white
+       and still above 4.5:1 on the light orange tints (#ffeee2), so it safely
+       serves buttons (white text on it), links and headings (it as text on
+       white or on a tint) - WCAG AA for normal text. (It was #b8580a: 4.74:1
+       on white but only 4.2:1 on tints.)
      - --color-primary-dark (#7c3a06, 7.95:1) is hover/pressed and the dark
        end of the brand gradients.
      - --color-accent (#d46911) is the mid orange gradient stop, keeping the
@@ -23,7 +25,7 @@
        (Foodpanda magenta, McDonald's/Jollibee red-yellow, Grab green).
      - Success/warning/error stay conventional semantic colors - they are
        meaning, not branding. */
-  --color-primary: #b8580a;
+  --color-primary: #a85008;
   --color-primary-dark: #7c3a06;
   --color-accent: #d46911;
   --color-orange-light: #f9b45e;

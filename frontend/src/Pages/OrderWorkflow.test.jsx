@@ -309,6 +309,17 @@ test('admin explicitly assigns a waiting order and only the selected rider sees 
   expect(saved().notifications[0].title).toBe('Order delivered');
 });
 
+test('Escape closes the rider order-details window', () => {
+  signIn(7, 'driver');
+  localStorage.setItem('otuzanCustomerActivity', JSON.stringify({
+    orders: [{ ...order, status: 'confirmed', assignedRider: { id: 7, name: 'Rider Seven' } }], cart: [], notifications: []
+  }));
+  render(<CustomerActivityProvider><RiderDashboard /></CustomerActivityProvider>);
+  fireEvent.click(screen.getByRole('button', { name: /View Order/ }));
+  expect(screen.getByRole('dialog')).toBeInTheDocument();
+  fireEvent.keyDown(document, { key: 'Escape' });
+  expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+});
 // A rider on the road moves an order forward from the list itself; opening the
 // order first is no longer needed.
 test('a rider advances an order with one tap on its card', () => {

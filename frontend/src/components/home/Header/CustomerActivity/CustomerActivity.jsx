@@ -248,9 +248,9 @@ const CustomerActivity = () => {
 
             {openPanel === 'activity' ? (
               <>
-                <div className="activity-tabs" role="tablist">
-                  <button className={activityTab === 'notifications' ? 'active' : ''} type="button" onClick={() => setActivityTab('notifications')}>Notifications</button>
-                  <button className={activityTab === 'orders' ? 'active' : ''} type="button" onClick={() => setActivityTab('orders')}>Track Orders</button>
+                <div className="activity-tabs" role="group" aria-label="Activity sections">
+                  <button className={activityTab === 'notifications' ? 'active' : ''} type="button" aria-pressed={activityTab === 'notifications'} onClick={() => setActivityTab('notifications')}>Notifications</button>
+                  <button className={activityTab === 'orders' ? 'active' : ''} type="button" aria-pressed={activityTab === 'orders'} onClick={() => setActivityTab('orders')}>Track Orders</button>
                 </div>
 
                 {activityTab === 'notifications' && notifications.length > 0 && (

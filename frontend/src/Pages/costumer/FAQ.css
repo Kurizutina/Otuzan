@@ -37,7 +37,7 @@
   padding-top: clamp(36px, 6vw, 64px);
   padding-bottom: clamp(40px, 6vw, 72px);
   padding-inline: clamp(20px, 5vw, 56px);
-  background: linear-gradient(120deg, #b8580a 0%, #d46911 52%, #b8286e 100%);
+  background: linear-gradient(120deg, #a85008 0%, #d46911 52%, #b8286e 100%);
 }
 
 .faq-page-home .faq-heading { text-align: center; }
@@ -49,7 +49,7 @@
 
 .faq-heading p {
   margin: 0;
-  color: #766a70;
+  color: #6a5e64;
   font-size: 14px;
 }
 

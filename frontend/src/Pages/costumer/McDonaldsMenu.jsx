@@ -369,6 +369,14 @@ export const RestaurantMenu = ({
   );
   const deliveryEstimate = useCartEstimate(itemCount);
 
+  // Escape closes the cart sheet, like the other pop-ups.
+  useEffect(() => {
+    if (!isCartOpen) return undefined;
+    const closeOnEscape = (event) => { if (event.key === 'Escape') setIsCartOpen(false); };
+    document.addEventListener('keydown', closeOnEscape);
+    return () => document.removeEventListener('keydown', closeOnEscape);
+  }, [isCartOpen]);
+
   const showNotice = (message) => {
     setNotice(message);
     window.setTimeout(() => setNotice(''), 2600);

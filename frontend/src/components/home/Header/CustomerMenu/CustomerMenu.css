@@ -80,7 +80,7 @@
 
 .customer-menu-summary small {
   margin-top: 3px;
-  color: #8a7d83;
+  color: #6a5e64;
   font-size: 11px;
 }
 
@@ -156,7 +156,7 @@
 
 .profile-modal-header p {
   margin: 5px 0 0;
-  color: #81757b;
+  color: #6a5e64;
   font-size: 13px;
 }
 
@@ -206,7 +206,7 @@
 .profile-field > div > i {
   width: 42px;
   flex-shrink: 0;
-  color: #b8580a;
+  color: #a85008;
   text-align: center;
 }
 
@@ -241,12 +241,12 @@
   flex-shrink: 0;
   border: 0;
   background: transparent;
-  color: #8a7d83;
+  color: #6a5e64;
   cursor: pointer;
 }
 
 .profile-field > small {
-  color: #8a7d83;
+  color: #6a5e64;
   font-size: 10px;
 }
 
