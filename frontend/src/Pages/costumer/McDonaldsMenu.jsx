@@ -1,11 +1,31 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FaUtensils } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { loginState } from '../../utils/loginRedirect';
 import { useCustomerActivity } from '../../context/CustomerActivityContext';
 import { calculateDeliveryFee, findDeliveryLocation } from '../../utils/deliveryRates';
 import { getSessionUser } from '../../utils/session';
 import LocationPicker from '../../components/home/Header/LocationPicker/LocationPicker';
 import './JollibeeMenu.css';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+
+// How long delivery should take, shown in the cart before the order is placed
+// (the same figure the placed order will then show). Quietly absent if the
+// request fails - the cart works fine without it.
+const useCartEstimate = (itemCount) => {
+  const [estimate, setEstimate] = useState(null);
+  useEffect(() => {
+    if (itemCount < 1) { setEstimate(null); return undefined; }
+    const controller = new AbortController();
+    fetch(`${API_URL}/api/delivery-estimate?items=${itemCount}`, { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body) => { if (body?.min) setEstimate(body); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [itemCount]);
+  return estimate;
+};
 
 const formatPrice = (price) => new Intl.NumberFormat('en-PH', {
   style: 'currency',
@@ -151,6 +171,7 @@ export const RestaurantMenu = ({
   highlightProductId = null
 }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     cart: sharedCart,
     addToCart: addSharedCartItem,
@@ -346,6 +367,7 @@ export const RestaurantMenu = ({
     () => cart.reduce((total, item) => total + (item.price || 0) * item.quantity, 0),
     [cart]
   );
+  const deliveryEstimate = useCartEstimate(itemCount);
 
   const showNotice = (message) => {
     setNotice(message);
@@ -392,7 +414,7 @@ export const RestaurantMenu = ({
       return;
     }
     if (!getSessionUser()) {
-      navigate('/login');
+      navigate('/login', { state: loginState(location, 'order') });
       return;
     }
     const order = placeCartOrder(sourceKey, deliveryLocation, customerType);
@@ -432,7 +454,8 @@ export const RestaurantMenu = ({
         />
       )}
 
-      {notice && <div className="jollibee-notice" role="status">{notice}</div>}
+      {/* With the cart open the message belongs next to the cart's own fields (below), not behind the sheet. */}
+      {notice && !isCartOpen && <div className="jollibee-notice" role="status">{notice}</div>}
 
       {/* Mobile only (see @media rules in JollibeeMenu.css): the embedded cart
           panel is hidden by default below the phone breakpoint so the menu is
@@ -558,6 +581,8 @@ export const RestaurantMenu = ({
             </div>
           )}
           {selectedLocation && <div className="restaurant-cart-service-fee"><span>Service fee{deliveryFee.surchargeApplied ? ' (includes night surcharge)' : ''}</span><strong>{formatPrice(deliveryFee.serviceFee)}</strong></div>}
+          {cart.length > 0 && deliveryEstimate && <div className="restaurant-cart-eta"><span>Estimated delivery</span><strong>{deliveryEstimate.min}–{deliveryEstimate.max} min</strong></div>}
+          {notice && isCartOpen && <div className="jollibee-notice in-cart" role="status">{notice}</div>}
           <div className="restaurant-delivery-location">
             <span>Delivery location</span>
             <LocationPicker variant="inline" />

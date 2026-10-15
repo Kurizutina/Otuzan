@@ -9,7 +9,6 @@ const AuthCard = ({
 
   email,
   password,
-  confirmPassword,
   accessCode,
   showPassword,
   rememberMe,
@@ -31,7 +30,6 @@ const AuthCard = ({
 
   onEmailChange,
   onPasswordChange,
-  onConfirmPasswordChange,
   onAccessCodeChange,
 
   onUsernameChange,
@@ -145,7 +143,9 @@ const AuthCard = ({
                 className={
                   message.type === 'error'
                     ? 'fas fa-exclamation-circle'
-                    : 'fas fa-check-circle'
+                    : message.type === 'info'
+                      ? 'fas fa-info-circle'
+                      : 'fas fa-check-circle'
                 }
               ></i>
 
@@ -161,7 +161,6 @@ const AuthCard = ({
 
             email={email}
             password={password}
-            confirmPassword={confirmPassword}
             accessCode={accessCode}
             rememberMe={rememberMe}
             onRememberMeChange={onRememberMeChange}
@@ -179,9 +178,6 @@ const AuthCard = ({
 
             onEmailChange={onEmailChange}
             onPasswordChange={onPasswordChange}
-            onConfirmPasswordChange={
-              onConfirmPasswordChange
-            }
             onAccessCodeChange={
               onAccessCodeChange
             }

@@ -4,7 +4,6 @@ const AuthForm = ({
   mode,
   email,
   password,
-  confirmPassword,
   accessCode,
   showPassword,
   rememberMe,
@@ -19,7 +18,6 @@ const AuthForm = ({
 
   onEmailChange,
   onPasswordChange,
-  onConfirmPasswordChange,
   onAccessCodeChange,
   onUsernameChange,
   onNameChange,
@@ -63,6 +61,7 @@ const AuthForm = ({
             <option value="student">Student</option>
             <option value="non_student">Non-Student</option>
           </select>
+          <small className="field-hint">The higher night delivery fee starts after 8 PM for students and after 6 PM for everyone else.</small>
         </div>
         <div className="form-group">
           <div className="input-icon-wrapper">
@@ -88,6 +87,8 @@ const AuthForm = ({
             <textarea
               className="input-field with-icon textarea-field"
               placeholder="Delivery address"
+              aria-label="Delivery address"
+              autoComplete="street-address"
               value={address}
               onChange={onAddressChange}
               required
@@ -107,7 +108,9 @@ const AuthForm = ({
               pattern="09[0-9]{9}"
               title="11 digits, starting with 09"
               className="input-field with-icon"
-              placeholder="Contact number (09XXXXXXXXX)"
+              placeholder="Mobile (09XXXXXXXXX)"
+              aria-label="Contact number"
+              autoComplete="tel"
               value={contactNumber}
               onChange={onContactNumberChange}
               required
@@ -155,7 +158,9 @@ const AuthForm = ({
               pattern="09[0-9]{9}"
               title="11 digits, starting with 09"
               className="input-field with-icon"
-              placeholder="Contact number (09XXXXXXXXX)"
+              placeholder="Mobile (09XXXXXXXXX)"
+              aria-label="Contact number"
+              autoComplete="tel"
               value={contactNumber}
               onChange={onContactNumberChange}
               required
@@ -194,6 +199,8 @@ const AuthForm = ({
             type="email"
             className="input-field with-icon"
             placeholder="Email address"
+            aria-label="Email address"
+            autoComplete="email"
             value={email}
             onChange={onEmailChange}
             required
@@ -256,6 +263,8 @@ const AuthForm = ({
             }
             className="input-field with-icon"
             placeholder="Password"
+            aria-label="Password"
+            autoComplete={isRegister ? 'new-password' : 'current-password'}
             value={password}
             onChange={onPasswordChange}
             required
@@ -266,6 +275,7 @@ const AuthForm = ({
         <button
           type="button"
           className="toggle-password"
+          aria-label={showPassword ? 'Hide password' : 'Show password'}
           onClick={onTogglePassword}
         >
           <i
@@ -290,32 +300,6 @@ const AuthForm = ({
             />
             Remember my email
           </label>
-        </div>
-      )}
-
-      {/* Confirm Password */}
-      {isRegister && (
-        <div className="form-group password-wrapper">
-
-          <div className="input-icon-wrapper">
-
-            <i className="fas fa-lock input-icon"></i>
-
-            <input
-              type={
-                showPassword
-                  ? 'text'
-                  : 'password'
-              }
-              className="input-field with-icon"
-              placeholder="Confirm password"
-              value={confirmPassword}
-              onChange={onConfirmPasswordChange}
-              required
-            />
-
-          </div>
-
         </div>
       )}
 

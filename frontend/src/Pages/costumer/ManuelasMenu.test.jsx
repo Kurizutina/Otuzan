@@ -3,7 +3,7 @@ import { CustomerActivityProvider } from '../../context/CustomerActivityContext'
 import ManuelasMenu from './ManuelasMenu';
 import { manuelasMenuData } from '../../components/home/ManuelasMenu/manuelasMenuData';
 
-jest.mock('react-router-dom', () => ({ useNavigate: () => jest.fn() }));
+jest.mock('react-router-dom', () => ({ useNavigate: () => jest.fn(), useLocation: () => ({ pathname: '/food/manuelas', search: '' }) }));
 
 beforeEach(() => localStorage.clear());
 

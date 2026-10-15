@@ -23,3 +23,9 @@
    without a label competing for space next to "Otu-Zan Delivery"). */
 @media (max-width:480px) { .location-picker-header .location-picker-trigger span { display:none; } }
 @media (max-width:360px) { .header-brand-copy strong { font-size:13px; }.header-guest-buttons button { padding-inline:7px; } }
+
+/* Phones: Login / Register are the way into ordering, so make them finger-sized. */
+@media (max-width: 720px) {
+  .header-guest-buttons button { min-height: 44px; }
+  .header-mobile-toggle { min-height: 44px; min-width: 44px; }
+}

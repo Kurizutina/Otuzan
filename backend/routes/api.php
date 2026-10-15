@@ -25,6 +25,7 @@ Route::post('/auth/reset-password', [AuthController::class, 'resetPassword'])->m
 Route::get('/catalog', [CatalogController::class, 'publicCatalog'])->middleware('throttle:1200,1,public');
 Route::get('/catalog/brands/{brand}/products', [CatalogController::class, 'publicProducts'])->middleware('throttle:1200,1,public');
 Route::get('/catalog/best-sellers', [CatalogController::class, 'bestSellers'])->middleware('throttle:1200,1,public');
+Route::get('/delivery-estimate', [OrderController::class, 'estimate'])->middleware('throttle:1200,1,public');
 // Bill documents are served only through a signed, expiring link (an <img>
 // tag can't send the bearer token); the signature is the authorization.
 // Files uploaded before 10/12 still live in public/ and are found there.

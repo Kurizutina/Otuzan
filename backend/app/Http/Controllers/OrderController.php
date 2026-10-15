@@ -256,13 +256,34 @@ class OrderController extends Controller
     // fewer than 5 usable orders it falls back to the original flat formula
     // (40 min + 2 per extra item, capped at 50). A range of +/-5 minutes
     // around that value is returned because it is an estimate, not a promise.
-    private function attachDeliveryEstimates($paginated): void
+    private function medianDeliveryMinutes(): ?float
     {
         $durations = Order::where('DeliveryStatus', 'delivered')->whereNotNull('StatusUpdatedAt')
             ->orderByDesc('StatusUpdatedAt')->limit(20)->get(['OrderDate', 'StatusUpdatedAt'])
             ->map(fn (Order $order) => Carbon::parse($order->OrderDate, 'UTC')->diffInMinutes(Carbon::parse($order->StatusUpdatedAt, 'UTC'), false))
             ->filter(fn ($minutes) => $minutes >= 5 && $minutes <= 180);
-        $median = $durations->count() >= 5 ? $durations->median() : null;
+        return $durations->count() >= 5 ? $durations->median() : null;
+    }
+
+    // Public (no login): what the cart shows BEFORE an order is placed, using the
+    // same calculation the placed order will show - the median of recent
+    // deliveries, or the flat formula until there are enough.
+    public function estimate(Request $request): JsonResponse
+    {
+        $request->validate(['items' => ['nullable', 'integer', 'min:1', 'max:999']]);
+        $items = min((int) $request->query('items', 1), 50);
+        $median = $this->medianDeliveryMinutes();
+        $minutes = (int) round($median ?? min(50, 40 + 2 * ($items - 1)));
+        return response()->json([
+            'min' => max(5, $minutes - 5),
+            'max' => $minutes + 5,
+            'basis' => $median === null ? 'formula' : 'recent_orders',
+        ]);
+    }
+
+    private function attachDeliveryEstimates($paginated): void
+    {
+        $median = $this->medianDeliveryMinutes();
 
         $paginated->getCollection()->transform(function (Order $order) use ($median) {
             $minutes = (int) round($median ?? min(50, 40 + 2 * ($this->itemCount($order) - 1)));

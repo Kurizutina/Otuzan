@@ -59,6 +59,21 @@ class DeliveryEstimateApiTest extends TestCase
         $this->assertSame(['min' => 39, 'max' => 49, 'basis' => 'formula'], array_intersect_key($estimate, array_flip(['min', 'max', 'basis'])));
     }
 
+    // The cart shows this before an order exists, so it needs no login and must
+    // agree with what the placed order will then show.
+    public function test_the_cart_estimate_is_public_and_matches_what_the_order_will_show(): void
+    {
+        $this->getJson('/api/delivery-estimate?items=3')->assertOk()
+            ->assertExactJson(['min' => 39, 'max' => 49, 'basis' => 'formula']);
+        $this->getJson('/api/delivery-estimate')->assertOk()->assertJsonPath('min', 35);
+        $this->getJson('/api/delivery-estimate?items=500')->assertOk()->assertJsonPath('max', 55);
+        $this->getJson('/api/delivery-estimate?items=abc')->assertUnprocessable();
+
+        foreach ([20, 30, 40, 50, 60] as $minutes) $this->delivered($minutes);
+        $this->getJson('/api/delivery-estimate?items=3')->assertOk()
+            ->assertExactJson(['min' => 35, 'max' => 45, 'basis' => 'recent_orders']);
+    }
+
     public function test_outliers_are_ignored_and_too_few_usable_orders_still_fall_back(): void
     {
         foreach ([30, 30, 30, 30] as $minutes) $this->delivered($minutes);

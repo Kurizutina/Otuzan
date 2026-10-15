@@ -12,6 +12,7 @@ import { FAQSection } from './FAQ';
 import { useCustomerActivity } from '../../context/CustomerActivityContext';
 import { CATALOG_CHANGED_EVENT, catalogImageUrl, getCatalog, getBestSellers, invalidateCatalogCache } from '../../utils/catalog';
 import { getSessionUser } from '../../utils/session';
+import { loginState } from '../../utils/loginRedirect';
 
 
 const Home = () => {
@@ -246,7 +247,7 @@ const Home = () => {
           // guests are sent to log in here, before investing effort filling
           // out a form they'd be blocked from submitting anyway.
           if (!getSessionUser()) {
-            navigate('/login');
+            navigate('/login', { state: loginState(location, 'order') });
             return;
           }
           if (brand.type === 'bills') {

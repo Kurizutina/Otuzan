@@ -78,3 +78,13 @@
 @media (max-width: 440px) {
   .location-picker-header .location-picker-trigger span { max-width: 90px; }
 }
+
+/* Phone-friendly: finger-sized options and trigger. Inside the cart sheet the list
+   opens UPWARD - the sheet sits at the bottom of the screen, so a downward list ran
+   off it. Elsewhere it stays downward but can scroll if it is taller than the room. */
+.location-picker-menu { max-height: 50vh; overflow-y: auto; }
+.location-picker-menu button { min-height: 44px; padding: 10px 12px; font-size: 14px; }
+.location-picker-inline .location-picker-trigger { min-height: 44px; font-size: 14px; }
+.location-picker-header .location-picker-trigger { min-height: 40px; min-width: 40px; }
+.restaurant-delivery-location .location-picker-menu,
+.global-cart-location .location-picker-menu { top: auto; bottom: calc(100% + 6px); }

@@ -1,6 +1,7 @@
 import { passwordProblem } from '../../../utils/passwordRules';
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { ORDER_LOGIN_MESSAGE, returnPathFrom } from '../../../utils/loginRedirect';
 
 import AuthCard from '../AuthCard/AuthCard';
 
@@ -21,6 +22,11 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 const AuthPage = ({ mode }) => {
 
   const navigate = useNavigate();
+  const location = useLocation();
+  // Set when a guest was sent here from a cart or a store: say why, and send a
+  // customer back there afterwards instead of to the home page.
+  const returnPath = returnPathFrom(location.state);
+  const sentToOrder = location.state?.reason === 'order';
 
   const [selectedRole, setSelectedRole] =
     useState(ROLES.CUSTOMER.key);
@@ -34,9 +40,6 @@ const AuthPage = ({ mode }) => {
     useState(() => (mode === 'login' && Boolean(localStorage.getItem(REMEMBERED_EMAIL_KEY))));
 
   const [password, setPassword] =
-    useState('');
-
-  const [confirmPassword, setConfirmPassword] =
     useState('');
 
   const [accessCode, setAccessCode] =
@@ -74,7 +77,6 @@ const AuthPage = ({ mode }) => {
       setSelectedRole(ROLES.CUSTOMER.key);
     }
 
-    setConfirmPassword('');
     setAccessCode('');
 
     setUsername('');
@@ -93,8 +95,10 @@ const AuthPage = ({ mode }) => {
   useEffect(() => {
     if (mode === 'login' && sessionStorage.getItem(SESSION_EXPIRED_KEY)) {
       setMessage({ type: 'error', text: 'Your session has expired. Please log in again.' });
+    } else if (sentToOrder) {
+      setMessage({ type: 'info', text: ORDER_LOGIN_MESSAGE });
     }
-  }, [mode, selectedRole]);
+  }, [mode, selectedRole, sentToOrder]);
 
 
   const handleRoleChange = (roleKey) => {
@@ -104,10 +108,11 @@ const AuthPage = ({ mode }) => {
 
   const handleToggleMode = () => {
 
+    // Keep the "come back to your cart" state when switching between the two.
     if (mode === 'login') {
-      navigate('/register');
+      navigate('/register', { state: location.state });
     } else {
-      navigate('/login');
+      navigate('/login', { state: location.state });
     }
 
   };
@@ -169,24 +174,6 @@ const AuthPage = ({ mode }) => {
         setMessage
       )
     ) {
-      return;
-    }
-
-
-    /*
-     * Confirm password
-     */
-    if (
-      mode === 'register' &&
-      password !== confirmPassword
-    ) {
-
-      setMessage({
-        type: 'error',
-        text:
-          'Passwords do not match.'
-      });
-
       return;
     }
 
@@ -285,7 +272,7 @@ const AuthPage = ({ mode }) => {
       if (result.mustChangePassword) {
         navigate('/change-password', { replace: true });
       } else {
-        navigate(getDashboardPath(result.user.role), { replace: true });
+        navigate(result.user.role === 'customer' && returnPath ? returnPath : getDashboardPath(result.user.role), { replace: true });
       }
     } catch (error) {
       setMessage({
@@ -312,7 +299,6 @@ const AuthPage = ({ mode }) => {
       password={password}
       rememberMe={rememberMe}
       onRememberMeChange={(e) => setRememberMe(e.target.checked)}
-      confirmPassword={confirmPassword}
       accessCode={accessCode}
 
       showPassword={showPassword}
@@ -340,10 +326,6 @@ const AuthPage = ({ mode }) => {
 
       onPasswordChange={(e) =>
         setPassword(e.target.value)
-      }
-
-      onConfirmPasswordChange={(e) =>
-        setConfirmPassword(e.target.value)
       }
 
       onAccessCodeChange={(e) =>
