@@ -151,7 +151,7 @@ const CustomerActivity = () => {
     updateOrderStatus,
     reportOrder
   } = useCustomerActivity();
-  const backendOrdersById = useBackendOrders('/api/orders?per_page=50');
+  const backendOrdersById = useBackendOrders('/api/orders?scope=active');
   const allOrders = useMemo(() => applyBackendTruth(localOrders, backendOrdersById), [localOrders, backendOrdersById]);
   const [now, setNow] = useState(Date.now());
   // Completed orders stay available for the rest of the Manila business day

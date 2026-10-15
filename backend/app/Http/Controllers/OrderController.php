@@ -26,6 +26,7 @@ class OrderController extends Controller
     private const CUSTOMER_FIELDS = 'UserID,UserName,Contact,Address,Email';
     private const CUSTOMER_FIELDS_FOR_RIDER = 'UserID,UserName,Contact,Address';
     private const RIDER_FIELDS = 'UserID,UserName';
+    private const FINISHED_STATUSES = ['delivered', 'cancelled'];
 
     // Forward steps after a rider accepts; one step at a time, never backwards.
     private const NEXT_STEP = ['confirmed' => 'preparing', 'preparing' => 'out_for_delivery', 'out_for_delivery' => 'delivered'];
@@ -157,8 +158,7 @@ class OrderController extends Controller
             $query->where('UserID', $user->UserID);
         }
 
-        $perPage = min(max((int) $request->query('per_page', 10), 1), 50);
-        $paginated = $query->paginate($perPage);
+        $paginated = $query->paginate($this->applyScope($request, $query));
         $this->attachQueuePositions($paginated);
         $this->attachDeliveryEstimates($paginated);
         return response()->json($paginated);
@@ -186,11 +186,39 @@ class OrderController extends Controller
             $query->where('OrderDate', '>=', $dayStart)->where('OrderDate', '<', $dayEnd);
         }
 
-        $perPage = min(max((int) $request->query('per_page', 10), 1), 50);
-        $paginated = $query->paginate($perPage);
+        $paginated = $query->paginate($this->applyScope($request, $query));
         $this->attachQueuePositions($paginated);
         $this->attachDeliveryEstimates($paginated);
         return response()->json($paginated);
+    }
+
+    // ?scope=active is what the live screens poll every 2 seconds: every
+    // order still in progress however old, plus finished ones from the last
+    // 24 hours (the customer's "today" list, the rider's 12-hour history, the
+    // 24-hour report window), delivered orders with an open report, and bill
+    // orders still waiting for payment review. A plain newest-50 page let an
+    // old open order fall off the screen once 50 newer orders existed.
+    // Open orders come first, so only a backlog of over 200 open orders could
+    // push one off the page. Returns the page size for the scope.
+    private function applyScope(Request $request, $query): int
+    {
+        if ($request->query('scope') !== 'active') {
+            return min(max((int) $request->query('per_page', 10), 1), 50);
+        }
+
+        $since = now()->subDay();
+        $query->where(function ($active) use ($since) {
+            $active->whereNotIn('DeliveryStatus', self::FINISHED_STATUSES)
+                ->orWhere('StatusUpdatedAt', '>=', $since)
+                ->orWhere(fn ($old) => $old->whereNull('StatusUpdatedAt')->where('OrderDate', '>=', $since))
+                ->orWhereNotNull('ReportedAt')
+                ->orWhere(fn ($bill) => $bill->where('DeliveryStatus', '!=', 'cancelled')
+                    ->whereHas('payments', fn ($payment) => $payment->where('PaymentStatus', 'pending')));
+        })->reorder()
+            ->orderByRaw("CASE WHEN DeliveryStatus IN ('delivered', 'cancelled') THEN 1 ELSE 0 END")
+            ->orderByDesc('OrderDate');
+
+        return min(max((int) $request->query('per_page', 200), 1), 200);
     }
 
     // Delivery-time estimate, computed here so every device shows the same

@@ -207,9 +207,10 @@ const useReportRefresh = () => {
   return revision;
 };
 
-// History used to read from the same 50-order-capped fetch Live Orders and
-// Payments use (useBackendOrders + applyBackendTruth), which is fine for
-// those - a bounded "what's active right now" working set - but wrong for
+// History used to read from the same capped fetch Live Orders and Payments
+// use (useBackendOrders + applyBackendTruth, now ?scope=active: open orders
+// plus the last day's finished ones), which is fine for those - a bounded
+// "what's active right now" working set - but wrong for
 // History, which only grows over the business's lifetime. A client-side
 // filter over that capped list would silently lose anything older than the
 // most recent 50 orders (the exact bug the Revenue tab had, found 9/23).
@@ -829,7 +830,7 @@ const AccountManagementTab = ({ role, onAccountsChanged }) => {
 const DeliveryAdminDashboard = () => {
   const navigate = useNavigate();
   const { orders: localOrders, updateOrderStatus, assignOrderToRider, updatePaymentStatus } = useCustomerActivity();
-  const backendOrdersById = useBackendOrders('/api/admin/orders?per_page=50');
+  const backendOrdersById = useBackendOrders('/api/admin/orders?scope=active');
   const orders = useMemo(() => applyBackendTruth(localOrders, backendOrdersById), [localOrders, backendOrdersById]);
   const [activeTab, setActiveTab] = useState('live');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

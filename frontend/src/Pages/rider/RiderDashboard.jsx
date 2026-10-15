@@ -79,7 +79,7 @@ const RiderDashboard = () => {
   const navigate = useNavigate();
   const { orders: allOrders, updateOrderStatus } = useCustomerActivity();
   const user = getSessionUser();
-  const backendOrdersById = useBackendOrders('/api/orders?per_page=50');
+  const backendOrdersById = useBackendOrders('/api/orders?scope=active');
   const localOrders = allOrders.filter((order) => user?.role === 'driver' && isAssignedTo(order, user));
   const assignedOrders = useMemo(() => applyBackendTruth(localOrders, backendOrdersById), [localOrders, backendOrdersById]);
   const [activeSection, setActiveSection] = useState('food');
